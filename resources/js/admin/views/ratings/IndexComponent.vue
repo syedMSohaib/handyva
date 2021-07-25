@@ -1,0 +1,186 @@
+<template>
+    <section id="configuration" class=" menu clients">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="">
+                    <router-link :to="{ name: 'home' }" class="back">
+                        <i class="fa fa-angle-left"></i>
+                    </router-link> {{ $route.meta.title }}</h1>                
+            </div>
+            <div class="col-12">
+                <div class="card rounded pad-20">
+                    <div class="card-content collapse show">
+                        <div class="card-body card-dashboard">
+
+                            <div class="maain-tabble mt-3  table-responsive">
+                                <table class="table table-striped table-bordered zero-configuration" id="reviewTable">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Date created</th>
+                                            <th>Reviewer ID</th>
+                                            <th>Reviewer Name</th>
+                                            <th>Review For</th>
+                                            <th>User Name</th>
+                                            <th>Rating</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-bind:key="index" v-for="(row, index) in data">
+                                            <td>{{ index+1 }}</td>
+                                            <td>{{ row.created_date }}</td>
+                                            <td>{{ row.rateable.id }}</td>
+                                            <td class="name-td">
+                                                <img class="avatar"
+                                                    :src="row.rateable.image">&nbsp;&nbsp;<span>{{ row.rateable.name }}</span>
+                                            </td>
+                                            <td>{{ row.torateable_type.substr(4) }}</td>
+                                            <td class="name-td">
+                                                <img class="avatar"
+                                                    :src="row.torateable.image">&nbsp;&nbsp;<span>{{ row.torateable.name }}</span>
+                                            </td>
+                                            <td>{{ row.rating }}</td>
+                                            <td>
+                                                <div class="btn-group mr-1 mb-1">
+                                                    <button type="button" class="btn  btn-drop-table btn-sm"
+                                                        data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        <i class="fa fa-ellipsis-v" />
+                                                    </button>
+                                                    <div class="dropdown-menu" x-placement="bottom-start"
+                                                        style="position: absolute; transform: translate3d(4px, 23px, 0px); top: 0px; left: 0px; will-change: transform;">
+                                                        <router-link class="dropdown-item"
+                                                            :to="{ name: 'reviews.show', params: { id: row.id } }">
+                                                            <i class="fa fa-eye"></i>View
+                                                        </router-link>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</template>
+
+<script>
+    import Datepicker from 'vuejs-datepicker';
+    export default {
+        data() {
+            return {
+                data: [],
+                from:'',
+                to:'',
+                table: undefined
+            }
+        },
+        components: { Datepicker },
+        mounted() {
+            this.getReviews();
+        },
+        methods: {
+            getReviews() {
+                if (this.table !== undefined)
+                    this.table.destroy();
+
+                axios.get(`/reports/reviews/all`)
+                    .then(data => {
+                        this.data = data.data;
+                        setTimeout(() => this.table = $('#reviewTable').DataTable(), 100);
+                    });
+            },
+        },
+        watch: {
+        }
+    }
+</script>
+
+<style>
+    .dg-content-footer {
+        text-align: center;
+        border: none;
+        padding: 0;
+    }
+
+    .dg-content-footer>button {
+        float: none;
+    }
+
+    button.dg-btn {
+        margin: 30px 10px 0 0 !important;
+        min-width: 130px;
+        padding: 10px 40px;
+        box-shadow: 0 0 0 0;
+        background: transparent !important;
+        color: #993e99;
+        border: 1px solid #993e99;
+        border-radius: 100px;
+        float: none;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    button.dg-btn.dg-btn--ok {
+        background: transparent !important;
+        border: 1px solid #993e99;
+    }
+
+    .dg-content-body {
+        padding-bottom: 0 !important;
+        border-bottom: none !important;
+    }
+
+    .dg-content {
+        font-size: 16px !important;
+        font-weight: 600;
+        word-break: initial !important;
+        text-align: center;
+
+        color: #333333 !important;
+        margin: 20px 0 0 0;
+        text-transform: capitalize;
+    }
+
+    .dg-main-content {
+        padding: 50px 20px !important;
+        max-width: 500px !important;
+        border-radius: 20px !important;
+    }
+
+    .dg-content:before {
+        content: "";
+        display: block;
+        width: 100%;
+        height: 80px;
+        margin-bottom: 10px;
+        /*background: url("/images/block.png") no-repeat center;*/
+    }
+
+    .dg-btn-loader .dg-circle {
+        background-color: #993e99 !important;
+    }
+
+    .dg-backdrop {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .media .swiper-container.swiper-container-initialized {
+        width: 300px;
+        display: block;
+        margin-right: 12px;
+    }
+
+    @media (max-height: 700px) {
+        .dg-content-cont--floating {
+            top: 50% !important;
+            transform: translateY(-50%);
+        }
+    }
+</style>

@@ -43,7 +43,7 @@
                                         <td>{{blog.created_date}}</td>
                                         <td>{{blog.title}}</td>
                                         <td>{{blog.mini_description}}</td>
-                                        <td>{{blog.author}}</td>
+                                        <td>{{blog.author_name}}</td>
                                         <td>
                                             <div class="d-flex">
                                                 <router-link :to="{ name: 'blog.show', params: { id:  blog.id } }" title="View BLog"

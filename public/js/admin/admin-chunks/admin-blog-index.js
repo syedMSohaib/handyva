@@ -273,7 +273,7 @@ var render = function() {
                         _vm._v(" "),
                         _c("td", [_vm._v(_vm._s(blog.mini_description))]),
                         _vm._v(" "),
-                        _c("td", [_vm._v(_vm._s(blog.author))]),
+                        _c("td", [_vm._v(_vm._s(blog.author_name))]),
                         _vm._v(" "),
                         _c("td", [
                           _c(

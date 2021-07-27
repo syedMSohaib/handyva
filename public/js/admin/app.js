@@ -2589,10 +2589,6 @@ var BlogShowComponent = function BlogShowComponent() {
   return __webpack_require__.e(/*! import() | admin-blog-show */ "admin-blog-show").then(__webpack_require__.bind(__webpack_require__, /*! ./views/blog/ShowComponent */ "./resources/js/admin/views/blog/ShowComponent.vue"));
 };
 
-var BlogEditComponent = function BlogEditComponent() {
-  return __webpack_require__.e(/*! import() | admin-blog-edit */ "admin-blog-edit").then(__webpack_require__.bind(__webpack_require__, /*! ./views/blog/EditComponent */ "./resources/js/admin/views/blog/EditComponent.vue"));
-};
-
 var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
   mode: 'history',
   base: "".concat( false ? 0 : "", "/admin/"),
@@ -2721,15 +2717,7 @@ var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
     name: 'blog.show',
     component: BlogShowComponent,
     meta: {
-      title: "Blog Show",
-      description: ""
-    }
-  }, {
-    path: '/blog/:id/edit',
-    name: 'blog.edit',
-    component: BlogEditComponent,
-    meta: {
-      title: "Blog Edit",
+      title: "Manage Blog",
       description: ""
     }
   }, {

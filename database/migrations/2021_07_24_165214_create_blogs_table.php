@@ -16,6 +16,7 @@ class CreateBlogsTable extends Migration
         Schema::create('blogs', function (Blueprint $table) {
             $table->id();
             $table->text('title');
+            $table->text('slug');
             $table->longText('body');
             $table->string('author_name')->nullable();
             $table->integer('no_of_shares')->default(0);

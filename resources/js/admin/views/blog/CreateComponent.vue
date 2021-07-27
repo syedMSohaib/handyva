@@ -10,8 +10,8 @@
             <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
-                    <li class="breadcrumb-item"><a href="javascript:void(0)">All Employee</a></li>
-                    <li class="breadcrumb-item active"><a href="javascript:void(0)">Create Employee</a></li>
+                    <li class="breadcrumb-item"><a href="javascript:void(0)">All Blog</a></li>
+                    <li class="breadcrumb-item active"><a href="javascript:void(0)">Create Blog</a></li>
                 </ol>
             </div>
         </div>
@@ -28,47 +28,42 @@
                             <div class="row row-sm mg-b-10 first-parent">
 
                                 <div class="col-sm-6 mb-2">
-                                    <input type="text" v-model="employee.name" class="form-control" placeholder="Enter Full Name" name="name">
+                                    <input type="text" v-model="blog.title" class="form-control" placeholder="Enter Blog title" name="title">
                                 </div>
                                 <div class="col-sm-6 mb-2">
-                                    <input type="email" v-model="employee.email" class="form-control" placeholder="Enter Email" name="email">
-                                </div>
-                                <div class="col-sm-6 mb-2">
-                                    <input type="password" v-model="employee.password" class="form-control" placeholder="Enter password" name="password">
-                                </div>
-                                <div class="col-sm-6 mb-2">
-                                    <select class="form-control"  v-model="employee.gender" name="gender">
-                                        <option value="">Select Gender</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                    </select>
-                                </div>
-                                <div class="col-sm-6 mb-2">
-                                    <input type="text" v-model="employee.phone" class="form-control" placeholder="Enter phone" name="phone">
-                                </div>
-                                <div class="col-sm-6 mb-2">
-                                    <input type="text" v-model="employee.cnic" class="form-control" placeholder="Enter cnic" name="cnic">
+                                    <input type="text" v-model="blog.author_name" class="form-control" placeholder="Enter Author Name" name="author_name">
                                 </div>
                                 <div class="col-sm-12 mb-2">
-                                    <input type="text" v-model="employee.address" class="form-control" placeholder="Enter address" name="address">
+                                    <textarea v-model="blog.mini_description" class="form-control" placeholder="Enter Blog Mini Description"></textarea>
                                 </div>
-                                <div class="col-sm-12 mb-3">
-                                    <div class="custom-file">
-                                        <input type="file" @change="handleFileChange" class="custom-file-input" id="customFile1" name="profile">
-                                        <label class="custom-file-label" for="customFile">Upload Profile Image
-                                            <small v-if="image"> (  {{ image.name }}  ) </small>
-                                        </label>
-
-                                    </div>
-                                </div>
-
                                 <div class="col-sm-12 mb-2">
-                                    <div class="custom-file">
-                                        <input type="file" @change="handleCVChange" class="custom-file-input" id="customFile1" name="profile">
-                                        <label class="custom-file-label" for="customFile">Upload CV
-                                            <small v-if="cv"> (  {{ cv.name }}  ) </small>
-                                        </label>
-                                    </div>
+                                    <input type="text" v-model="blog.meta_title" class="form-control" placeholder="Enter Meta title" name="meta_title">
+                                </div>
+                                <div class="col-sm-12 mb-2">
+                                    <input type="text" v-model="blog.meta_keywords" class="form-control"
+                                        placeholder="Enter Meta keywords e.g abc, def, ghi" name="meta_keywords">
+                                </div>
+                                <div class="col-sm-12 mb-2">
+                                    <textarea v-model="blog.meta_description" class="form-control" placeholder="Enter Meta Description"></textarea>
+                                </div>
+                                <div class="col-sm-12 mb-2">
+                                    <editor
+                                        v-model="blog.body"
+                                        api-key="no-api-key"
+                                        :init="{
+                                            height: 500,
+                                            menubar: false,
+                                            plugins: [
+                                            'advlist autolink lists link image charmap print preview anchor',
+                                            'searchreplace visualblocks code fullscreen',
+                                            'insertdatetime media table paste code help wordcount'
+                                            ],
+                                            toolbar:
+                                            'undo redo | formatselect | bold italic backcolor | \
+                                            alignleft aligncenter alignright alignjustify | \
+                                            bullist numlist outdent indent | removeformat | help'
+                                        }"
+                                        />
                                 </div>
                             </div>
 
@@ -92,18 +87,17 @@
 
 <script>
 
+    import Editor from '@tinymce/tinymce-vue'
     export default {
         data() {
             return {
-                employee: {
-                    gender: '',
-                    name: '',
-                    email: '',
-                    password: '',
-                    gender: '',
-                    phone: '',
-                    address: '',
-                    cnic: '',
+                blog: {
+                    title: '',
+                    author_name: '',
+                    mini_description: '',
+                    meta_title: '',
+                    meta_keywords: '',
+                    meta_description: '',
                 },
                 image: '',
                 cv: '',
@@ -112,34 +106,16 @@
             }
         },
         components: {
-
+            'editor': Editor
         },
         mounted() {
         },
         methods: {
-            handleFileChange(e){
-                this.image = e.target.files[0];
-                console.log(e.target.files[0]);
-            },
-            handleCVChange(e){
-                this.cv = e.target.files[0];
-            },
             store(){
-                let formData = new FormData();
-
-                formData.append("name", this.employee.name);
-                formData.append("email", this.employee.email);
-                formData.append("password", this.employee.password);
-                formData.append("gender", this.employee.gender);
-                formData.append("phone", this.employee.phone);
-                formData.append("cnic", this.employee.cnic);
-                formData.append("address", this.employee.address);
-                formData.append("image", this.image);
-                formData.append("cv", this.cv);
-                axios.post(`/user`, formData)
+                axios.post(`/blog`, this.blog)
                     .then(({data}) => {
                         this.$toastr.success(data.message, 'Success');
-                        this.$router.push({name: 'employee'});
+                        this.$router.push({name: 'blog'});
                     }).catch( e => {
                     let errors = e.response.data.errors;
                     Object.keys(errors).forEach(key=>{

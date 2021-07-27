@@ -28,17 +28,61 @@ class BlogController extends Controller
     }
 
 
+    /**
+     * store
+     *
+     * @param  mixed $request
+     * @return void
+     */
     public function store(Request $request){
+        $request->validate([
+            "title" => 'required',
+            "body" => 'required',
+            "author_name" => 'required',
+            "mini_description" => 'required',
+        ]);
+
+        $blog = new Blog();
+        $blog->fill($request->all());
+        $blog->save();
+
+        return $this->responseSuccess("Blog is saved successfully");
 
     }
 
 
-    public function update(Request $request){
+    /**
+     * update
+     *
+     * @param  mixed $request
+     * @param  mixed $blog
+     * @return void
+     */
+    public function update(Request $request, Blog $blog){
+        $request->validate([
+            "title" => 'required',
+            "body" => 'required',
+            "author_name" => 'required',
+            "mini_description" => 'required',
+        ]);
+
+        $blog->fill($request->all());
+        $blog->save();
+
+        return $this->responseSuccess("Blog is updated successfully");
 
     }
 
 
-    public function destroy(Request $request){
-
+    /**
+     * destroy
+     *
+     * @param  mixed $request
+     * @param  mixed $blog
+     * @return void
+     */
+    public function destroy(Request $request, Blog $blog){
+        $blog->delete();
+        return $this->responseSuccess("Blog is deleted successfully");
     }
 }

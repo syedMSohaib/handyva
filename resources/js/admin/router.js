@@ -30,7 +30,6 @@ const ClientShowComponent       = () => import(/* webpackChunkName: "admin-clien
 const BlogComponent             = () => import(/* webpackChunkName: "admin-blog-index" */ './views/blog/IndexComponent');
 const BlogCreateComponent       = () => import(/* webpackChunkName: "admin-blog-create" */ './views/blog/CreateComponent');
 const BlogShowComponent         = () => import(/* webpackChunkName: "admin-blog-show" */ './views/blog/ShowComponent');
-const BlogEditComponent         = () => import(/* webpackChunkName: "admin-blog-edit" */ './views/blog/EditComponent');
 
 
 
@@ -178,16 +177,7 @@ const router = new VueRouter({
             name: 'blog.show',
             component: BlogShowComponent,
             meta: {
-                title: "Blog Show",
-                description: ""
-            }
-        },
-        {
-            path: '/blog/:id/edit',
-            name: 'blog.edit',
-            component: BlogEditComponent,
-            meta: {
-                title: "Blog Edit",
+                title: "Manage Blog",
                 description: ""
             }
         },

@@ -7,7 +7,6 @@
     "/js/admin/admin-chunks/admin-task-create.js": "/js/admin/admin-chunks/admin-task-create.js",
     "/js/admin/admin-chunks/admin-task-show.js": "/js/admin/admin-chunks/admin-task-show.js",
     "/js/admin/admin-chunks/admin-task-log.js": "/js/admin/admin-chunks/admin-task-log.js",
-    "/css/admin/app.css": "/css/admin/app.css",
     "/js/admin/admin-chunks/admin-employee-index.js": "/js/admin/admin-chunks/admin-employee-index.js",
     "/js/admin/admin-chunks/admin-employee-create.js": "/js/admin/admin-chunks/admin-employee-create.js",
     "/js/admin/admin-chunks/admin-employee-show.js": "/js/admin/admin-chunks/admin-employee-show.js",
@@ -16,9 +15,9 @@
     "/js/admin/admin-chunks/admin-client-create.js": "/js/admin/admin-chunks/admin-client-create.js",
     "/js/admin/admin-chunks/admin-client-show.js": "/js/admin/admin-chunks/admin-client-show.js",
     "/js/admin/admin-chunks/admin-blog-index.js": "/js/admin/admin-chunks/admin-blog-index.js",
-    "/js/admin/admin-chunks/admin-blog-show.js": "/js/admin/admin-chunks/admin-blog-show.js",
     "/js/admin/admin-chunks/admin-blog-create.js": "/js/admin/admin-chunks/admin-blog-create.js",
-    "/js/admin/admin-chunks/admin-blog-edit.js": "/js/admin/admin-chunks/admin-blog-edit.js",
+    "/js/admin/admin-chunks/admin-blog-show.js": "/js/admin/admin-chunks/admin-blog-show.js",
     "/js/admin/admin-chunks/admin-Referral-index.js": "/js/admin/admin-chunks/admin-Referral-index.js",
-    "/js/admin/admin-chunks/admin.chat.js": "/js/admin/admin-chunks/admin.chat.js"
+    "/js/admin/admin-chunks/admin.chat.js": "/js/admin/admin-chunks/admin.chat.js",
+    "/css/admin/app.css": "/css/admin/app.css"
 }

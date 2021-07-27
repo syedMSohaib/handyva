@@ -68,6 +68,8 @@ return [
     */
 
     'timezone' => 'UTC',
+    'date_format' => env('DATE_FORMAT', 'm/d/Y'),
+    'datetime_format' => env('DATETIME_FORMAT', 'm/d/Y h:i:s A'),
 
     /*
     |--------------------------------------------------------------------------

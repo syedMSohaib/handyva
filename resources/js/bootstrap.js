@@ -1,4 +1,5 @@
 window._ = require('lodash');
+window.$ = window.jQuery = require('jquery');
 
 /**
  * We'll load jQuery and the Bootstrap jQuery plugin which provides support
@@ -64,6 +65,7 @@ if(!getCookie('p_token')){
     setCookie('p_token', urlParams.get('token'), 2);
 }
 
+// console.log(getCookie('p_token'));
 window.axios.defaults.headers.common['Authorization'] = `Bearer ${getCookie('p_token')}`;
 
 // Add a request interceptor

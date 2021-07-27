@@ -19,6 +19,10 @@ class CreateBlogsTable extends Migration
             $table->longText('body');
             $table->string('author_name')->nullable();
             $table->integer('no_of_shares')->default(0);
+            $table->longText('mini_description')->nullable();
+            $table->longText('meta_title')->nullable();
+            $table->longText('meta_description')->nullable();
+            $table->longText('meta_keywords')->nullable();
             $table->timestamps();
         });
     }

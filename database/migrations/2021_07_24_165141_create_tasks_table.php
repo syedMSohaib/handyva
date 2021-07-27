@@ -28,6 +28,10 @@ class CreateTasksTable extends Migration
             $table->string('end_type')->nullable();
             $table->string('end_after')->nullable();
             $table->datetime('end_at')->nullable();
+            $table->longText("cancellation_reason")->nullable();
+            $table->string("occurrence")->nullable();
+            $table->string("repeat_every")->nullable();
+            $table->text("repeat_on")->nullable();
             $table->timestamps();
         });
     }

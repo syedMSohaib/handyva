@@ -11,7 +11,7 @@
             <PerfectScrollbar ref="scrollbar">
                 <ul class="metismenu" id="menu">
                     <li class="mm-active">
-                        <router-link class="ai-icon" :to="{ name: 'profile' }">
+                        <router-link class="ai-icon" :to="{ name: 'home' }">
                             <i class="flaticon-144-layout"></i>
                             <span class="nav-text">Dashboard</span>
                         </router-link>
@@ -22,61 +22,49 @@
                             <span class="nav-text">Tasks</span>
                         </a>
                         <ul aria-expanded="false">
-                            <li><a href="tasks.html">All Tasks (5)</a></li>
-                            <li><a href="#">Active Tasks (0)</a></li>
-                            <li><a href="#">Pending Tasks (5)</a></li>
-                            <li><a href="#">Excess Tasks 0</a></li>
-                            <li><a href="#">WIP Tasks (0)</a></li>
-                            <li><a href="#">Extensive Tasks (0)</a></li>
-                            <li><a href="#">Recurring Tasks (0)</a></li>
-                            <li><a href="#">Completed Tasks 0</a></li>
-                            <li><a href="#">Cancelled Tasks (0)</a></li>
+                            <li><router-link :to="{ name: 'task'}">All Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { status: 1 } }" >Active Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { status: 0 } }" >Pending Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { excess: 1 } }" >Excess Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { status: 2 } }" >WIP Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { extensive: 1 } }" >Extensive Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { recurring: 1 } }" >Recurring Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { status: 3 } }" >Completed Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { status: 4 } }" >Cancelled Tasks</router-link></li>
                         </ul>
                     </li>
-                    <li><a class="ai-icon" href="profile.html">
+                    <li><router-link class="ai-icon" :to="{ name: 'employee'}">
                             <i class="fi-rr-user"></i>
-                            <span class="nav-text">Profile</span>
-                        </a>
+                            <span class="nav-text">Employees</span>
+                        </router-link>
                     </li>
-                    <li><a class="ai-icon" href="reminders.html">
+                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
                             <i class="fi-rr-alarm-clock"></i>
-                            <span class="nav-text">Set Reminders</span>
-                        </a>
+                            <span class="nav-text">Clients</span>
+                        </router-link>
                     </li>
-                    <li><a class="ai-icon" href="reminders.html">
+                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
                             <i class="fi-rr-receipt"></i>
                             <span class="nav-text">Referrals</span>
-                        </a>
+                        </router-link>
                     </li>
-                    <li><a class="ai-icon" href="chat.html">
+                    <li><router-link class="ai-icon" :to="{ name: 'blog'}">
+                            <i class="fi-rr-receipt"></i>
+                            <span class="nav-text">Blogs</span>
+                        </router-link>
+                    </li>
+                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
+                            <i class="fi-rr-receipt"></i>
+                            <span class="nav-text">Reminders</span>
+                        </router-link>
+                    </li>
+                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
                             <i class="fi-rr-comment"></i>
                             <span class="nav-text">Chatbox Support</span>
-                        </a>
+                        </router-link>
                     </li>
 
                 </ul>
-
-                <!-- <ul class="metismenu" id="menu">
-                    <li v-for="(item, index) in items" :class="{
-                    hasSub : !! item.subItems.length,
-                    open: (!!item.subItems.length)? item.path.indexOf(currentNav) >= 0 || item.isOpen: currentNav === item.path,
-                    active: currentNav.indexOf(item.path) >= 0
-                    }" v-bind:key="index" @click="open(item)">
-                        <router-link :title="item.name" :to="item.subItems.length > 0? '': item.path" class="ai-icon" :class="{  }">
-                            <i class="" :class="item.icon"></i>
-                            <span class="nav-text">{{item.name}}</span>
-                        </router-link>
-                        <ul v-if="item.subItems.length>0" class="menu-content">
-                            <li class="nav-item" v-for="(subitem, idx) in item.subItems" v-bind:key="idx">
-                                <router-link :title="subitem.name" :to="subitem.path" class="menu-item"
-                                    :class="{isShown: subitem.path === currentNav}">
-                                    <i class="nav-icon fa " :class="item.icon"></i>
-                                    {{ subitem.name }}
-                                </router-link>
-                            </li>
-                        </ul>
-                    </li>
-                </ul> -->
             </PerfectScrollbar>
 
         </div>
@@ -86,7 +74,7 @@
 
 <style>
     .ps {
-        height: 100%;
+        height: 400px;
     }
 
 </style>

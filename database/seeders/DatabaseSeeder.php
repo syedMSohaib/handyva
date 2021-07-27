@@ -18,5 +18,6 @@ class DatabaseSeeder extends Seeder
         //     PackageSeeder::class,
         // ]);
         // \App\Models\Client::factory(10)->create();
+        \App\Models\User::factory(10)->create();
     }
 }

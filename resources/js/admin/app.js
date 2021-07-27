@@ -14,6 +14,7 @@ import VueTimeago from 'vue-timeago'
 import PerfectScrollbar from 'vue2-perfect-scrollbar'
 import 'vue2-perfect-scrollbar/dist/vue2-perfect-scrollbar.css'
 import Img from './components/Img.vue';
+import { param } from 'jquery';
 window.toastr = require('toastr');
 
 Vue.use(VueRouter);
@@ -37,6 +38,15 @@ Vue.mixin({
     methods:{
         dateFormat(date){
             return (date) ? date.getFullYear() + '-' + ((date.getMonth() +1).toString().padStart(2, 0)) + '-' + (date.getDate().toString().padStart(2, 0)) : '';
+        },
+        dateFormatLaravel(date){
+            let split = date.split('T');
+            let time = split[1].split('.')[0];
+            let d = `${split[0]} ${time}`;
+            return new Date(d).toLocaleString();
+        },
+        buildqueryparams(params){
+            return (new URLSearchParams(params)).toString()
         }
     }
 });

@@ -29,6 +29,7 @@ class Client extends Authenticatable
         "image",
     ];
 
+
     /**
      * The attributes that should be hidden for arrays.
      *
@@ -47,4 +48,29 @@ class Client extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    protected $appends = ['name', 'created_date'];
+
+    public function getNameAttribute(){
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function getCreatedDateAttribute(){
+        return $this->created_at->format(config('app.date_format'));
+    }
+
+    public function getImageAttribute($value){
+        return $value
+            ? asset("storage/{$value}")
+            : "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={$this->name}";
+    }
+
+
+    public function plan(){
+        return $this->belongsTo(Package::class, 'current_plan');
+    }
+
+    public function task(){
+        return $this->hasMany(Task::class, 'client_id');
+    }
 }

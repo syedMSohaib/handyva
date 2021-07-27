@@ -21,6 +21,12 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        "phone",
+        "cnic",
+        "gender",
+        "address",
+        "image",
+        "cv",
     ];
 
     /**
@@ -41,4 +47,24 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    protected $appends = ['created_date'];
+
+    public function getCreatedDateAttribute(){
+        return $this->created_at->format(config('app.date_format'));
+    }
+
+    public function getImageAttribute($value){
+        return $value
+            ? asset("storage/{$value}")
+            : "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={$this->name}";
+    }
+
+    public function getCvAttribute($value){
+        return $value
+            ? asset("storage/{$value}")
+            : "#";
+    }
+
+
 }

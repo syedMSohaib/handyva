@@ -287,6 +287,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "Title": () => (/* binding */ plugin_title),
 /* harmony export */   "Tooltip": () => (/* binding */ plugin_tooltip),
 /* harmony export */   "_adapters": () => (/* binding */ adapters),
+/* harmony export */   "_detectPlatform": () => (/* binding */ _detectPlatform),
 /* harmony export */   "animator": () => (/* binding */ animator),
 /* harmony export */   "controllers": () => (/* binding */ controllers),
 /* harmony export */   "elements": () => (/* binding */ elements),
@@ -298,7 +299,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./chunks/helpers.segment.js */ "./node_modules/chart.js/dist/chunks/helpers.segment.js");
 /*!
- * Chart.js v3.4.1
+ * Chart.js v3.5.0
  * https://www.chartjs.org
  * (c) 2021 Chart.js Contributors
  * Released under the MIT License
@@ -885,6 +886,7 @@ function createDataContext(parent, index, element) {
   });
 }
 function clearStacks(meta, items) {
+  const datasetIndex = meta.controller.index;
   const axis = meta.vScale && meta.vScale.axis;
   if (!axis) {
     return;
@@ -892,10 +894,10 @@ function clearStacks(meta, items) {
   items = items || meta._parsed;
   for (const parsed of items) {
     const stacks = parsed._stacks;
-    if (!stacks || stacks[axis] === undefined || stacks[axis][meta.index] === undefined) {
+    if (!stacks || stacks[axis] === undefined || stacks[axis][datasetIndex] === undefined) {
       return;
     }
-    delete stacks[axis][meta.index];
+    delete stacks[axis][datasetIndex];
   }
 }
 const isDirectUpdateMode = (mode) => mode === 'reset' || mode === 'none';
@@ -1233,6 +1235,9 @@ class DatasetController {
     }
     for (i = start; i < start + count; ++i) {
       const element = elements[i];
+      if (element.hidden) {
+        continue;
+      }
       if (element.active) {
         active.push(element);
       } else {
@@ -1563,6 +1568,69 @@ function parseArrayOrPrimitive(meta, data, start, count) {
 function isFloatBar(custom) {
   return custom && custom.barStart !== undefined && custom.barEnd !== undefined;
 }
+function barSign(size, vScale, actualBase) {
+  if (size !== 0) {
+    return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.s)(size);
+  }
+  return (vScale.isHorizontal() ? 1 : -1) * (vScale.min >= actualBase ? 1 : -1);
+}
+function borderProps(properties) {
+  let reverse, start, end, top, bottom;
+  if (properties.horizontal) {
+    reverse = properties.base > properties.x;
+    start = 'left';
+    end = 'right';
+  } else {
+    reverse = properties.base < properties.y;
+    start = 'bottom';
+    end = 'top';
+  }
+  if (reverse) {
+    top = 'end';
+    bottom = 'start';
+  } else {
+    top = 'start';
+    bottom = 'end';
+  }
+  return {start, end, reverse, top, bottom};
+}
+function setBorderSkipped(properties, options, stack, index) {
+  let edge = options.borderSkipped;
+  const res = {};
+  if (!edge) {
+    properties.borderSkipped = res;
+    return;
+  }
+  const {start, end, reverse, top, bottom} = borderProps(properties);
+  if (edge === 'middle' && stack) {
+    properties.enableBorderRadius = true;
+    if ((stack._top || 0) === index) {
+      edge = top;
+    } else if ((stack._bottom || 0) === index) {
+      edge = bottom;
+    } else {
+      res[parseEdge(bottom, start, end, reverse)] = true;
+      edge = top;
+    }
+  }
+  res[parseEdge(edge, start, end, reverse)] = true;
+  properties.borderSkipped = res;
+}
+function parseEdge(edge, a, b, reverse) {
+  if (reverse) {
+    edge = swap(edge, a, b);
+    edge = startEnd(edge, b, a);
+  } else {
+    edge = startEnd(edge, a, b);
+  }
+  return edge;
+}
+function swap(orig, v1, v2) {
+  return orig === v1 ? v2 : orig === v2 ? v1 : orig;
+}
+function startEnd(v, start, end) {
+  return v === 'start' ? start : v === 'end' ? end : v;
+}
 class BarController extends DatasetController {
   parsePrimitiveData(meta, data, start, count) {
     return parseArrayOrPrimitive(meta, data, start, count);
@@ -1625,7 +1693,7 @@ class BarController extends DatasetController {
   updateElements(bars, start, count, mode) {
     const me = this;
     const reset = mode === 'reset';
-    const vScale = me._cachedMeta.vScale;
+    const {index, _cachedMeta: {vScale}} = me;
     const base = vScale.getBasePixel();
     const horizontal = vScale.isHorizontal();
     const ruler = me._getRuler();
@@ -1641,7 +1709,7 @@ class BarController extends DatasetController {
       const properties = {
         horizontal,
         base: vpixels.base,
-        enableBorderRadius: !stack || isFloatBar(parsed._custom) || (me.index === stack._top || me.index === stack._bottom),
+        enableBorderRadius: !stack || isFloatBar(parsed._custom) || (index === stack._top || index === stack._bottom),
         x: horizontal ? vpixels.head : ipixels.center,
         y: horizontal ? ipixels.center : vpixels.head,
         height: horizontal ? ipixels.size : Math.abs(vpixels.size),
@@ -1650,6 +1718,7 @@ class BarController extends DatasetController {
       if (includeOptions) {
         properties.options = sharedOptions || me.resolveDataElementOptions(i, bars[i].active ? 'active' : mode);
       }
+      setBorderSkipped(properties, properties.options || bars[i].options, stack, index);
       me.updateElement(bars[i], i, properties, mode);
     }
   }
@@ -1725,8 +1794,8 @@ class BarController extends DatasetController {
   }
   _calculateBarValuePixels(index) {
     const me = this;
-    const {vScale, _stacked} = me._cachedMeta;
-    const {base: baseValue, minBarLength} = me.options;
+    const {_cachedMeta: {vScale, _stacked}, options: {base: baseValue, minBarLength}} = me;
+    const actualBase = baseValue || 0;
     const parsed = me.getParsed(index);
     const custom = parsed._custom;
     const floating = isFloatBar(custom);
@@ -1748,29 +1817,23 @@ class BarController extends DatasetController {
     }
     const startValue = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(baseValue) && !floating ? baseValue : start;
     let base = vScale.getPixelForValue(startValue);
-    if (this.chart.getDataVisibility(index)) {
+    if (me.chart.getDataVisibility(index)) {
       head = vScale.getPixelForValue(start + length);
     } else {
       head = base;
     }
     size = head - base;
-    if (minBarLength !== undefined && Math.abs(size) < minBarLength) {
-      size = size < 0 ? -minBarLength : minBarLength;
-      if (value === 0) {
+    if (Math.abs(size) < minBarLength) {
+      size = barSign(size, vScale, actualBase) * minBarLength;
+      if (value === actualBase) {
         base -= size / 2;
       }
       head = base + size;
     }
-    const actualBase = baseValue || 0;
     if (base === vScale.getPixelForValue(actualBase)) {
-      const halfGrid = vScale.getLineWidthForValue(actualBase) / 2;
-      if (size > 0) {
-        base += halfGrid;
-        size -= halfGrid;
-      } else if (size < 0) {
-        base -= halfGrid;
-        size += halfGrid;
-      }
+      const halfGrid = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.s)(size) * vScale.getLineWidthForValue(actualBase) / 2;
+      base += halfGrid;
+      size -= halfGrid;
     }
     return {
       size,
@@ -2066,7 +2129,7 @@ class DoughnutController extends DatasetController {
     const opts = me.options;
     const meta = me._cachedMeta;
     const circumference = me._getCircumference();
-    if ((reset && opts.animation.animateRotate) || !this.chart.getDataVisibility(i) || meta._parsed[i] === null) {
+    if ((reset && opts.animation.animateRotate) || !this.chart.getDataVisibility(i) || meta._parsed[i] === null || meta.data[i].hidden) {
       return 0;
     }
     return me.calculateCircumference(meta._parsed[i] * circumference / _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.T);
@@ -2118,7 +2181,7 @@ class DoughnutController extends DatasetController {
     let i;
     for (i = 0; i < metaData.length; i++) {
       const value = meta._parsed[i];
-      if (value !== null && !isNaN(value) && this.chart.getDataVisibility(i)) {
+      if (value !== null && !isNaN(value) && this.chart.getDataVisibility(i) && !metaData[i].hidden) {
         total += Math.abs(value);
       }
     }
@@ -2289,6 +2352,7 @@ class LineController extends DatasetController {
       start = 0;
       count = points.length;
     }
+    line._datasetIndex = me.index;
     line._decimated = !!_dataset._decimated;
     line.points = points;
     const options = me.resolveDatasetElementOptions(mode);
@@ -2840,7 +2904,7 @@ function getNearestItems(chart, position, axis, intersect, useFinalPosition) {
       return;
     }
     const center = element.getCenterPoint(useFinalPosition);
-    if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.y)(center, chart.chartArea, chart._minPadding)) {
+    if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.y)(center, chart.chartArea, chart._minPadding) && !element.inRange(position.x, position.y, useFinalPosition)) {
       return;
     }
     const distance = distanceMetric(position, center);
@@ -2949,31 +3013,53 @@ function sortByWeight(array, reverse) {
 }
 function wrapBoxes(boxes) {
   const layoutBoxes = [];
-  let i, ilen, box;
+  let i, ilen, box, pos, stack, stackWeight;
   for (i = 0, ilen = (boxes || []).length; i < ilen; ++i) {
     box = boxes[i];
+    ({position: pos, options: {stack, stackWeight = 1}} = box);
     layoutBoxes.push({
       index: i,
       box,
-      pos: box.position,
+      pos,
       horizontal: box.isHorizontal(),
-      weight: box.weight
+      weight: box.weight,
+      stack: stack && (pos + stack),
+      stackWeight
     });
   }
   return layoutBoxes;
 }
+function buildStacks(layouts) {
+  const stacks = {};
+  for (const wrap of layouts) {
+    const {stack, pos, stackWeight} = wrap;
+    if (!stack || !STATIC_POSITIONS.includes(pos)) {
+      continue;
+    }
+    const _stack = stacks[stack] || (stacks[stack] = {count: 0, placed: 0, weight: 0, size: 0});
+    _stack.count++;
+    _stack.weight += stackWeight;
+  }
+  return stacks;
+}
 function setLayoutDims(layouts, params) {
+  const stacks = buildStacks(layouts);
+  const {vBoxMaxWidth, hBoxMaxHeight} = params;
   let i, ilen, layout;
   for (i = 0, ilen = layouts.length; i < ilen; ++i) {
     layout = layouts[i];
+    const {fullSize} = layout.box;
+    const stack = stacks[layout.stack];
+    const factor = stack && layout.stackWeight / stack.weight;
     if (layout.horizontal) {
-      layout.width = layout.box.fullSize && params.availableWidth;
-      layout.height = params.hBoxMaxHeight;
+      layout.width = factor ? factor * vBoxMaxWidth : fullSize && params.availableWidth;
+      layout.height = hBoxMaxHeight;
     } else {
-      layout.width = params.vBoxMaxWidth;
-      layout.height = layout.box.fullSize && params.availableHeight;
+      layout.width = vBoxMaxWidth;
+      layout.height = factor ? factor * hBoxMaxHeight : fullSize && params.availableHeight;
     }
   }
+  return stacks;
 }
 function buildLayoutBoxes(boxes) {
   const layoutBoxes = wrapBoxes(boxes);
@@ -3002,15 +3088,17 @@ function updateMaxPadding(maxPadding, boxPadding) {
   maxPadding.bottom = Math.max(maxPadding.bottom, boxPadding.bottom);
   maxPadding.right = Math.max(maxPadding.right, boxPadding.right);
 }
-function updateDims(chartArea, params, layout) {
-  const box = layout.box;
+function updateDims(chartArea, params, layout, stacks) {
+  const {pos, box} = layout;
   const maxPadding = chartArea.maxPadding;
-  if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.i)(layout.pos)) {
+  if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.i)(pos)) {
     if (layout.size) {
-      chartArea[layout.pos] -= layout.size;
+      chartArea[pos] -= layout.size;
     }
-    layout.size = layout.horizontal ? box.height : box.width;
-    chartArea[layout.pos] += layout.size;
+    const stack = stacks[layout.stack] || {size: 0, count: 1};
+    stack.size = Math.max(stack.size, layout.horizontal ? box.height : box.width);
+    layout.size = stack.size / stack.count;
+    chartArea[pos] += layout.size;
   }
   if (box.getPadding) {
     updateMaxPadding(maxPadding, box.getPadding());
@@ -3050,7 +3138,7 @@ function getMargins(horizontal, chartArea) {
     ? marginForPositions(['left', 'right'])
     : marginForPositions(['top', 'bottom']);
 }
-function fitBoxes(boxes, chartArea, params) {
+function fitBoxes(boxes, chartArea, params, stacks) {
   const refitBoxes = [];
   let i, ilen, layout, box, refit, changed;
   for (i = 0, ilen = boxes.length, refit = 0; i < ilen; ++i) {
@@ -3061,36 +3149,57 @@ function fitBoxes(boxes, chartArea, params) {
       layout.height || chartArea.h,
       getMargins(layout.horizontal, chartArea)
     );
-    const {same, other} = updateDims(chartArea, params, layout);
+    const {same, other} = updateDims(chartArea, params, layout, stacks);
     refit |= same && refitBoxes.length;
     changed = changed || other;
     if (!box.fullSize) {
       refitBoxes.push(layout);
     }
   }
-  return refit && fitBoxes(refitBoxes, chartArea, params) || changed;
+  return refit && fitBoxes(refitBoxes, chartArea, params, stacks) || changed;
 }
-function placeBoxes(boxes, chartArea, params) {
+function setBoxDims(box, left, top, width, height) {
+  box.top = top;
+  box.left = left;
+  box.right = left + width;
+  box.bottom = top + height;
+  box.width = width;
+  box.height = height;
+}
+function placeBoxes(boxes, chartArea, params, stacks) {
   const userPadding = params.padding;
-  let x = chartArea.x;
-  let y = chartArea.y;
-  let i, ilen, layout, box;
-  for (i = 0, ilen = boxes.length; i < ilen; ++i) {
-    layout = boxes[i];
-    box = layout.box;
+  let {x, y} = chartArea;
+  for (const layout of boxes) {
+    const box = layout.box;
+    const stack = stacks[layout.stack] || {count: 1, placed: 0, weight: 1};
+    const weight = (layout.stackWeight / stack.weight) || 1;
     if (layout.horizontal) {
-      box.left = box.fullSize ? userPadding.left : chartArea.left;
-      box.right = box.fullSize ? params.outerWidth - userPadding.right : chartArea.left + chartArea.w;
-      box.top = y;
-      box.bottom = y + box.height;
-      box.width = box.right - box.left;
+      const width = chartArea.w * weight;
+      const height = stack.size || box.height;
+      if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.h)(stack.start)) {
+        y = stack.start;
+      }
+      if (box.fullSize) {
+        setBoxDims(box, userPadding.left, y, params.outerWidth - userPadding.right - userPadding.left, height);
+      } else {
+        setBoxDims(box, chartArea.left + stack.placed, y, width, height);
+      }
+      stack.start = y;
+      stack.placed += width;
       y = box.bottom;
     } else {
-      box.left = x;
-      box.right = x + box.width;
-      box.top = box.fullSize ? userPadding.top : chartArea.top;
-      box.bottom = box.fullSize ? params.outerHeight - userPadding.bottom : chartArea.top + chartArea.h;
-      box.height = box.bottom - box.top;
+      const height = chartArea.h * weight;
+      const width = stack.size || box.width;
+      if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.h)(stack.start)) {
+        x = stack.start;
+      }
+      if (box.fullSize) {
+        setBoxDims(box, x, userPadding.top, width, params.outerHeight - userPadding.bottom - userPadding.top);
+      } else {
+        setBoxDims(box, x, chartArea.top + stack.placed, width, height);
+      }
+      stack.start = x;
+      stack.placed += height;
       x = box.right;
     }
   }
@@ -3169,17 +3278,17 @@ var layouts = {
       x: padding.left,
       y: padding.top
     }, padding);
-    setLayoutDims(verticalBoxes.concat(horizontalBoxes), params);
-    fitBoxes(boxes.fullSize, chartArea, params);
-    fitBoxes(verticalBoxes, chartArea, params);
-    if (fitBoxes(horizontalBoxes, chartArea, params)) {
-      fitBoxes(verticalBoxes, chartArea, params);
+    const stacks = setLayoutDims(verticalBoxes.concat(horizontalBoxes), params);
+    fitBoxes(boxes.fullSize, chartArea, params, stacks);
+    fitBoxes(verticalBoxes, chartArea, params, stacks);
+    if (fitBoxes(horizontalBoxes, chartArea, params, stacks)) {
+      fitBoxes(verticalBoxes, chartArea, params, stacks);
     }
     handleMaxPadding(chartArea);
-    placeBoxes(boxes.leftAndTop, chartArea, params);
+    placeBoxes(boxes.leftAndTop, chartArea, params, stacks);
     chartArea.x += chartArea.w;
     chartArea.y += chartArea.h;
-    placeBoxes(boxes.rightAndBottom, chartArea, params);
+    placeBoxes(boxes.rightAndBottom, chartArea, params, stacks);
     chart.chartArea = {
       left: chartArea.left,
       top: chartArea.top,
@@ -3466,8 +3575,15 @@ class DomPlatform extends BasePlatform {
   }
   isAttached(canvas) {
     const container = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.D)(canvas);
-    return !!(container && (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.D)(container));
+    return !!(container && container.isConnected);
   }
+}
+
+function _detectPlatform(canvas) {
+  if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)() || (typeof OffscreenCanvas !== 'undefined' && canvas instanceof OffscreenCanvas)) {
+    return BasicPlatform;
+  }
+  return DomPlatform;
 }
 
 class Element {
@@ -3519,7 +3635,7 @@ const formatters = {
       }
       delta = calculateDelta(tickValue, ticks);
     }
-    const logDelta = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(Math.abs(delta));
+    const logDelta = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(Math.abs(delta));
     const numDecimal = Math.max(Math.min(-1 * Math.floor(logDelta), 20), 0);
     const options = {notation, minimumFractionDigits: numDecimal, maximumFractionDigits: numDecimal};
     Object.assign(options, this.options.ticks.format);
@@ -3529,7 +3645,7 @@ const formatters = {
     if (tickValue === 0) {
       return '0';
     }
-    const remain = tickValue / (Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(tickValue))));
+    const remain = tickValue / (Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(tickValue))));
     if (remain === 1 || remain === 2 || remain === 5) {
       return formatters.numeric.call(this, tickValue, index, ticks);
     }
@@ -3651,7 +3767,7 @@ function calculateSpacing(majorIndices, ticks, ticksLimit) {
   if (!evenMajorSpacing) {
     return Math.max(spacing, 1);
   }
-  const factors = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(evenMajorSpacing);
+  const factors = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(evenMajorSpacing);
   for (let i = 0, ilen = factors.length - 1; i < ilen; i++) {
     const factor = factors[i];
     if (factor > spacing) {
@@ -3775,7 +3891,7 @@ function getTitleHeight(options, fallback) {
   if (!options.display) {
     return 0;
   }
-  const font = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.font, fallback);
+  const font = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.font, fallback);
   const padding = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.A)(options.padding);
   const lines = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(options.text) ? options.text.length : 1;
   return (lines * font.lineHeight) + padding.height;
@@ -3794,23 +3910,42 @@ function createTickContext(parent, index, tick) {
   });
 }
 function titleAlign(align, position, reverse) {
-  let ret = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(align);
+  let ret = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align);
   if ((reverse && position !== 'right') || (!reverse && position === 'right')) {
     ret = reverseAlign(ret);
   }
   return ret;
 }
 function titleArgs(scale, offset, position, align) {
-  const {top, left, bottom, right} = scale;
+  const {top, left, bottom, right, chart} = scale;
+  const {chartArea, scales} = chart;
   let rotation = 0;
   let maxWidth, titleX, titleY;
+  const height = bottom - top;
+  const width = right - left;
   if (scale.isHorizontal()) {
-    titleX = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, left, right);
-    titleY = offsetFromEdge(scale, position, offset);
+    titleX = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, left, right);
+    if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.i)(position)) {
+      const positionAxisID = Object.keys(position)[0];
+      const value = position[positionAxisID];
+      titleY = scales[positionAxisID].getPixelForValue(value) + height - offset;
+    } else if (position === 'center') {
+      titleY = (chartArea.bottom + chartArea.top) / 2 + height - offset;
+    } else {
+      titleY = offsetFromEdge(scale, position, offset);
+    }
     maxWidth = right - left;
   } else {
-    titleX = offsetFromEdge(scale, position, offset);
-    titleY = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, bottom, top);
+    if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.i)(position)) {
+      const positionAxisID = Object.keys(position)[0];
+      const value = position[positionAxisID];
+      titleX = scales[positionAxisID].getPixelForValue(value) - width + offset;
+    } else if (position === 'center') {
+      titleX = (chartArea.left + chartArea.right) / 2 - width + offset;
+    } else {
+      titleX = offsetFromEdge(scale, position, offset);
+    }
+    titleY = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, bottom, top);
     rotation = position === 'left' ? -_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.H : _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.H;
   }
   return {titleX, titleY, maxWidth, rotation};
@@ -3880,13 +4015,13 @@ class Scale extends Element {
   }
   getUserBounds() {
     let {_userMin, _userMax, _suggestedMin, _suggestedMax} = this;
-    _userMin = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(_userMin, Number.POSITIVE_INFINITY);
-    _userMax = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(_userMax, Number.NEGATIVE_INFINITY);
-    _suggestedMin = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(_suggestedMin, Number.POSITIVE_INFINITY);
-    _suggestedMax = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(_suggestedMax, Number.NEGATIVE_INFINITY);
+    _userMin = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(_userMin, Number.POSITIVE_INFINITY);
+    _userMax = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(_userMax, Number.NEGATIVE_INFINITY);
+    _suggestedMin = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(_suggestedMin, Number.POSITIVE_INFINITY);
+    _suggestedMax = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(_suggestedMax, Number.NEGATIVE_INFINITY);
     return {
-      min: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(_userMin, _suggestedMin),
-      max: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(_userMax, _suggestedMax),
+      min: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(_userMin, _suggestedMin),
+      max: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(_userMax, _suggestedMax),
       minDefined: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.g)(_userMin),
       maxDefined: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.g)(_userMax)
     };
@@ -3909,8 +4044,8 @@ class Scale extends Element {
       }
     }
     return {
-      min: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(min, (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(max, min)),
-      max: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(max, (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(min, max))
+      min: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(min, (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(max, min)),
+      max: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(max, (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(min, max))
     };
   }
   getPadding() {
@@ -3934,7 +4069,7 @@ class Scale extends Element {
     this._dataLimitsCached = false;
   }
   beforeUpdate() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.beforeUpdate, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.beforeUpdate, [this]);
   }
   update(maxWidth, maxHeight, margins) {
     const me = this;
@@ -3963,7 +4098,7 @@ class Scale extends Element {
       me.beforeDataLimits();
       me.determineDataLimits();
       me.afterDataLimits();
-      me._range = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(me, me.options.grace);
+      me._range = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.N)(me, me.options.grace);
       me._dataLimitsCached = true;
     }
     me.beforeBuildTicks();
@@ -4006,10 +4141,10 @@ class Scale extends Element {
     me._alignToPixels = me.options.alignToPixels;
   }
   afterUpdate() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.afterUpdate, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.afterUpdate, [this]);
   }
   beforeSetDimensions() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.beforeSetDimensions, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.beforeSetDimensions, [this]);
   }
   setDimensions() {
     const me = this;
@@ -4028,12 +4163,12 @@ class Scale extends Element {
     me.paddingBottom = 0;
   }
   afterSetDimensions() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.afterSetDimensions, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.afterSetDimensions, [this]);
   }
   _callHooks(name) {
     const me = this;
     me.chart.notifyPlugins(name, me.getContext());
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(me.options[name], [me]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(me.options[name], [me]);
   }
   beforeDataLimits() {
     this._callHooks('beforeDataLimits');
@@ -4052,7 +4187,7 @@ class Scale extends Element {
     this._callHooks('afterBuildTicks');
   }
   beforeTickToLabelConversion() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.beforeTickToLabelConversion, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.beforeTickToLabelConversion, [this]);
   }
   generateTickLabels(ticks) {
     const me = this;
@@ -4060,14 +4195,14 @@ class Scale extends Element {
     let i, ilen, tick;
     for (i = 0, ilen = ticks.length; i < ilen; i++) {
       tick = ticks[i];
-      tick.label = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(tickOpts.callback, [tick.value, i, ticks], me);
+      tick.label = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(tickOpts.callback, [tick.value, i, ticks], me);
     }
   }
   afterTickToLabelConversion() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.afterTickToLabelConversion, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.afterTickToLabelConversion, [this]);
   }
   beforeCalculateLabelRotation() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.beforeCalculateLabelRotation, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.beforeCalculateLabelRotation, [this]);
   }
   calculateLabelRotation() {
     const me = this;
@@ -4092,19 +4227,19 @@ class Scale extends Element {
       maxHeight = me.maxHeight - getTickMarkLength(options.grid)
 				- tickOpts.padding - getTitleHeight(options.title, me.chart.options.font);
       maxLabelDiagonal = Math.sqrt(maxLabelWidth * maxLabelWidth + maxLabelHeight * maxLabelHeight);
-      labelRotation = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.N)(Math.min(
-        Math.asin(Math.min((labelSizes.highest.height + 6) / tickWidth, 1)),
-        Math.asin(Math.min(maxHeight / maxLabelDiagonal, 1)) - Math.asin(maxLabelHeight / maxLabelDiagonal)
+      labelRotation = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.O)(Math.min(
+        Math.asin((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.q)((labelSizes.highest.height + 6) / tickWidth, -1, 1)),
+        Math.asin((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.q)(maxHeight / maxLabelDiagonal, -1, 1)) - Math.asin((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.q)(maxLabelHeight / maxLabelDiagonal, -1, 1))
       ));
       labelRotation = Math.max(minRotation, Math.min(maxRotation, labelRotation));
     }
     me.labelRotation = labelRotation;
   }
   afterCalculateLabelRotation() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.afterCalculateLabelRotation, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.afterCalculateLabelRotation, [this]);
   }
   beforeFit() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.beforeFit, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.beforeFit, [this]);
   }
   fit() {
     const me = this;
@@ -4201,7 +4336,7 @@ class Scale extends Element {
     }
   }
   afterFit() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(this.options.afterFit, [this]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(this.options.afterFit, [this]);
   }
   isHorizontal() {
     const {axis, position} = this.options;
@@ -4252,13 +4387,13 @@ class Scale extends Element {
       lineHeight = tickFont.lineHeight;
       width = height = 0;
       if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(label) && !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(label)) {
-        width = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.O)(ctx, cache.data, cache.gc, width, label);
+        width = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Q)(ctx, cache.data, cache.gc, width, label);
         height = lineHeight;
       } else if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(label)) {
         for (j = 0, jlen = label.length; j < jlen; ++j) {
           nestedLabel = label[j];
           if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(nestedLabel) && !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(nestedLabel)) {
-            width = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.O)(ctx, cache.data, cache.gc, width, nestedLabel);
+            width = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Q)(ctx, cache.data, cache.gc, width, nestedLabel);
             height += lineHeight;
           }
         }
@@ -4301,7 +4436,7 @@ class Scale extends Element {
       decimal = 1 - decimal;
     }
     const pixel = me._startPixel + decimal * me._length;
-    return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Q)(me._alignToPixels ? (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(me.chart, pixel, 0) : pixel);
+    return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(me._alignToPixels ? (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(me.chart, pixel, 0) : pixel);
   }
   getDecimalForPixel(pixel) {
     const decimal = (pixel - this._startPixel) / this._length;
@@ -4364,7 +4499,7 @@ class Scale extends Element {
     const axisWidth = borderOpts.drawBorder ? borderOpts.borderWidth : 0;
     const axisHalfWidth = axisWidth / 2;
     const alignBorderValue = function(pixel) {
-      return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(chart, pixel, axisWidth);
+      return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(chart, pixel, axisWidth);
     };
     let borderValue, i, lineValue, alignedLineValue;
     let tx1, ty1, tx2, ty2, x1, y1, x2, y2;
@@ -4433,7 +4568,7 @@ class Scale extends Element {
       if (lineValue === undefined) {
         continue;
       }
-      alignedLineValue = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(chart, lineValue, lineWidth);
+      alignedLineValue = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(chart, lineValue, lineWidth);
       if (isHorizontal) {
         tx1 = tx2 = x1 = x2 = alignedLineValue;
       } else {
@@ -4757,12 +4892,12 @@ class Scale extends Element {
     const borderValue = me._borderValue;
     let x1, x2, y1, y2;
     if (me.isHorizontal()) {
-      x1 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(chart, me.left, axisWidth) - axisWidth / 2;
-      x2 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(chart, me.right, lastLineWidth) + lastLineWidth / 2;
+      x1 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(chart, me.left, axisWidth) - axisWidth / 2;
+      x2 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(chart, me.right, lastLineWidth) + lastLineWidth / 2;
       y1 = y2 = borderValue;
     } else {
-      y1 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(chart, me.top, axisWidth) - axisWidth / 2;
-      y2 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.R)(chart, me.bottom, lastLineWidth) + lastLineWidth / 2;
+      y1 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(chart, me.top, axisWidth) - axisWidth / 2;
+      y2 = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(chart, me.bottom, lastLineWidth) + lastLineWidth / 2;
       x1 = x2 = borderValue;
     }
     ctx.save();
@@ -4783,7 +4918,7 @@ class Scale extends Element {
     const ctx = me.ctx;
     const area = me._computeLabelArea();
     if (area) {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(ctx, area);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, area);
     }
     const items = me._labelItems || (me._labelItems = me._computeLabelItems(chartArea));
     let i, ilen;
@@ -4796,10 +4931,10 @@ class Scale extends Element {
         ctx.fillRect(item.backdrop.left, item.backdrop.top, item.backdrop.width, item.backdrop.height);
       }
       let y = item.textOffset;
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, label, 0, y, tickFont, item);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx, label, 0, y, tickFont, item);
     }
     if (area) {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(ctx);
     }
   }
   drawTitle() {
@@ -4807,11 +4942,11 @@ class Scale extends Element {
     if (!title.display) {
       return;
     }
-    const font = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(title.font);
+    const font = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(title.font);
     const padding = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.A)(title.padding);
     const align = title.align;
     let offset = font.lineHeight / 2;
-    if (position === 'bottom') {
+    if (position === 'bottom' || position === 'center' || (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.i)(position)) {
       offset += padding.bottom;
       if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(title.text)) {
         offset += font.lineHeight * (title.text.length - 1);
@@ -4820,7 +4955,7 @@ class Scale extends Element {
       offset += padding.top;
     }
     const {titleX, titleY, maxWidth, rotation} = titleArgs(this, offset, position, align);
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, title.text, 0, 0, font, {
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx, title.text, 0, 0, font, {
       color: title.color,
       maxWidth,
       rotation,
@@ -4844,7 +4979,7 @@ class Scale extends Element {
     const me = this;
     const opts = me.options;
     const tz = opts.ticks && opts.ticks.z || 0;
-    const gz = opts.grid && opts.grid.z || 0;
+    const gz = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.v)(opts.grid && opts.grid.z, -1);
     if (!me._isVisible() || me.draw !== Scale.prototype.draw) {
       return [{
         z: tz,
@@ -4888,7 +5023,7 @@ class Scale extends Element {
   }
   _resolveTickFontOptions(index) {
     const opts = this.options.ticks.setContext(this.getContext(index));
-    return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(opts.font);
+    return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(opts.font);
   }
   _maxDigits() {
     const me = this;
@@ -4943,13 +5078,13 @@ class TypedRegistry {
     if (scope && id in _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d[scope]) {
       delete _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d[scope][id];
       if (this.override) {
-        delete _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z[id];
+        delete _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.$[id];
       }
     }
   }
 }
 function registerDefaults(item, scope, parentScope) {
-  const itemDefaults = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.$)(Object.create(null), [
+  const itemDefaults = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a0)(Object.create(null), [
     parentScope ? _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.get(parentScope) : {},
     _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.get(scope),
     item.defaults
@@ -5042,10 +5177,10 @@ class Registry {
     });
   }
   _exec(method, registry, component) {
-    const camelMethod = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a0)(method);
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(component['before' + camelMethod], [], component);
+    const camelMethod = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a1)(method);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(component['before' + camelMethod], [], component);
     registry[method](component);
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(component['after' + camelMethod], [], component);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(component['after' + camelMethod], [], component);
   }
   _getRegistryForType(type) {
     for (let i = 0; i < this._typedRegistries.length; i++) {
@@ -5090,7 +5225,7 @@ class PluginService {
       const plugin = descriptor.plugin;
       const method = plugin[hook];
       const params = [chart, args, descriptor.options];
-      if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(method, params, plugin) === false && args.cancelable) {
+      if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(method, params, plugin) === false && args.cancelable) {
         return false;
       }
     }
@@ -5203,7 +5338,7 @@ function determineAxis(id, scaleOptions) {
   return scaleOptions.axis || axisFromPosition(scaleOptions.position) || id.charAt(0).toLowerCase();
 }
 function mergeScaleConfig(config, options) {
-  const chartDefaults = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z[config.type] || {scales: {}};
+  const chartDefaults = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.$[config.type] || {scales: {}};
   const configScales = options.scales || {};
   const chartIndexAxis = getIndexAxis(config.type, options);
   const firstIDs = Object.create(null);
@@ -5214,23 +5349,23 @@ function mergeScaleConfig(config, options) {
     const defaultId = getDefaultScaleIDFromAxis(axis, chartIndexAxis);
     const defaultScaleOptions = chartDefaults.scales || {};
     firstIDs[axis] = firstIDs[axis] || id;
-    scales[id] = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a6)(Object.create(null), [{axis}, scaleConf, defaultScaleOptions[axis], defaultScaleOptions[defaultId]]);
+    scales[id] = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a7)(Object.create(null), [{axis}, scaleConf, defaultScaleOptions[axis], defaultScaleOptions[defaultId]]);
   });
   config.data.datasets.forEach(dataset => {
     const type = dataset.type || config.type;
     const indexAxis = dataset.indexAxis || getIndexAxis(type, options);
-    const datasetDefaults = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z[type] || {};
+    const datasetDefaults = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.$[type] || {};
     const defaultScaleOptions = datasetDefaults.scales || {};
     Object.keys(defaultScaleOptions).forEach(defaultID => {
       const axis = getAxisFromDefaultScaleID(defaultID, indexAxis);
       const id = dataset[axis + 'AxisID'] || firstIDs[axis] || axis;
       scales[id] = scales[id] || Object.create(null);
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a6)(scales[id], [{axis}, configScales[id], defaultScaleOptions[defaultID]]);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a7)(scales[id], [{axis}, configScales[id], defaultScaleOptions[defaultID]]);
     });
   });
   Object.keys(scales).forEach(key => {
     const scale = scales[key];
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a6)(scale, [_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.scales[scale.type], _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.scale]);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a7)(scale, [_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.scales[scale.type], _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.scale]);
   });
   return scales;
 }
@@ -5273,6 +5408,9 @@ class Config {
     this._config = initConfig(config);
     this._scopeCache = new Map();
     this._resolverCache = new Map();
+  }
+  get platform() {
+    return this._config.platform;
   }
   get type() {
     return this._config.type;
@@ -5365,11 +5503,14 @@ class Config {
         keys.forEach(key => addIfFound(scopes, mainScope, key));
       }
       keys.forEach(key => addIfFound(scopes, options, key));
-      keys.forEach(key => addIfFound(scopes, _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z[type] || {}, key));
+      keys.forEach(key => addIfFound(scopes, _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.$[type] || {}, key));
       keys.forEach(key => addIfFound(scopes, _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d, key));
-      keys.forEach(key => addIfFound(scopes, _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a1, key));
+      keys.forEach(key => addIfFound(scopes, _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a2, key));
     });
     const array = Array.from(scopes);
+    if (array.length === 0) {
+      array.push(Object.create(null));
+    }
     if (keysCached.has(keyLists)) {
       cache.set(keyLists, array);
     }
@@ -5379,11 +5520,11 @@ class Config {
     const {options, type} = this;
     return [
       options,
-      _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z[type] || {},
+      _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.$[type] || {},
       _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.datasets[type] || {},
       {type},
       _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d,
-      _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a1
+      _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a2
     ];
   }
   resolveNamedOptions(scopes, names, context, prefixes = ['']) {
@@ -5392,9 +5533,9 @@ class Config {
     let options = resolver;
     if (needContext(resolver, names)) {
       result.$shared = false;
-      context = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a2)(context) ? context() : context;
+      context = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a3)(context) ? context() : context;
       const subResolver = this.createResolver(scopes, context, subPrefixes);
-      options = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a3)(resolver, context, subResolver);
+      options = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a4)(resolver, context, subResolver);
     }
     for (const prop of names) {
       result[prop] = options[prop];
@@ -5404,7 +5545,7 @@ class Config {
   createResolver(scopes, context, prefixes = [''], descriptorDefaults) {
     const {resolver} = getResolver(this._resolverCache, scopes, prefixes);
     return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.i)(context)
-      ? (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a3)(resolver, context, undefined, descriptorDefaults)
+      ? (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a4)(resolver, context, undefined, descriptorDefaults)
       : resolver;
   }
 }
@@ -5417,7 +5558,7 @@ function getResolver(resolverCache, scopes, prefixes) {
   const cacheKey = prefixes.join();
   let cached = cache.get(cacheKey);
   if (!cached) {
-    const resolver = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a4)(scopes, prefixes);
+    const resolver = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a5)(scopes, prefixes);
     cached = {
       resolver,
       subPrefixes: prefixes.filter(p => !p.toLowerCase().includes('hover'))
@@ -5427,9 +5568,9 @@ function getResolver(resolverCache, scopes, prefixes) {
   return cached;
 }
 function needContext(proxy, names) {
-  const {isScriptable, isIndexable} = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a5)(proxy);
+  const {isScriptable, isIndexable} = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a6)(proxy);
   for (const prop of names) {
-    if ((isScriptable(prop) && (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a2)(proxy[prop]))
+    if ((isScriptable(prop) && (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a3)(proxy[prop]))
       || (isIndexable(prop) && (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(proxy[prop]))) {
       return true;
     }
@@ -5437,7 +5578,7 @@ function needContext(proxy, names) {
   return false;
 }
 
-var version = "3.4.1";
+var version = "3.5.0";
 
 const KNOWN_POSITIONS = ['top', 'bottom', 'left', 'right', 'chartArea'];
 function positionIsHorizontal(position, axis) {
@@ -5454,18 +5595,15 @@ function onAnimationsComplete(context) {
   const chart = context.chart;
   const animationOptions = chart.options.animation;
   chart.notifyPlugins('afterRender');
-  (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(animationOptions && animationOptions.onComplete, [context], chart);
+  (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(animationOptions && animationOptions.onComplete, [context], chart);
 }
 function onAnimationProgress(context) {
   const chart = context.chart;
   const animationOptions = chart.options.animation;
-  (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(animationOptions && animationOptions.onProgress, [context], chart);
-}
-function isDomSupported() {
-  return typeof window !== 'undefined' && typeof document !== 'undefined';
+  (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(animationOptions && animationOptions.onProgress, [context], chart);
 }
 function getCanvas(item) {
-  if (isDomSupported() && typeof item === 'string') {
+  if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)() && typeof item === 'string') {
     item = document.getElementById(item);
   } else if (item && item.length) {
     item = item[0];
@@ -5481,9 +5619,9 @@ const getChart = (key) => {
   return Object.values(instances).filter((c) => c.canvas === canvas).pop();
 };
 class Chart {
-  constructor(item, config) {
+  constructor(item, userConfig) {
     const me = this;
-    this.config = config = new Config(config);
+    const config = this.config = new Config(userConfig);
     const initialCanvas = getCanvas(item);
     const existingChart = getChart(initialCanvas);
     if (existingChart) {
@@ -5493,12 +5631,12 @@ class Chart {
       );
     }
     const options = config.createResolver(config.chartOptionScopes(), me.getContext());
-    this.platform = me._initializePlatform(initialCanvas, config);
+    this.platform = new (config.platform || _detectPlatform(initialCanvas))();
     const context = me.platform.acquireContext(initialCanvas, options.aspectRatio);
     const canvas = context && context.canvas;
     const height = canvas && canvas.height;
     const width = canvas && canvas.width;
-    this.id = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a7)();
+    this.id = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a8)();
     this.ctx = context;
     this.canvas = canvas;
     this.width = width;
@@ -5524,7 +5662,7 @@ class Chart {
     this.attached = false;
     this._animationsDisabled = undefined;
     this.$context = undefined;
-    this._doResize = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a8)(() => this.update('resize'), options.resizeDelay || 0);
+    this._doResize = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a9)(() => this.update('resize'), options.resizeDelay || 0);
     instances[me.id] = me;
     if (!context || !canvas) {
       console.error("Failed to create chart: can't acquire context from the given item");
@@ -5565,22 +5703,14 @@ class Chart {
     if (me.options.responsive) {
       me.resize();
     } else {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a9)(me, me.options.devicePixelRatio);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aa)(me, me.options.devicePixelRatio);
     }
     me.bindEvents();
     me.notifyPlugins('afterInit');
     return me;
   }
-  _initializePlatform(canvas, config) {
-    if (config.platform) {
-      return new config.platform();
-    } else if (!isDomSupported() || (typeof OffscreenCanvas !== 'undefined' && canvas instanceof OffscreenCanvas)) {
-      return new BasicPlatform();
-    }
-    return new DomPlatform();
-  }
   clear() {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aa)(this.canvas, this.ctx);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ab)(this.canvas, this.ctx);
     return this;
   }
   stop() {
@@ -5604,11 +5734,11 @@ class Chart {
     me.width = newSize.width;
     me.height = newSize.height;
     me._aspectRatio = me.aspectRatio;
-    if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a9)(me, newRatio, true)) {
+    if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aa)(me, newRatio, true)) {
       return;
     }
     me.notifyPlugins('resize', {size: newSize});
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(options.onResize, [me, newSize], me);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(options.onResize, [me, newSize], me);
     if (me.attached) {
       if (me._doResize()) {
         me.render();
@@ -5767,7 +5897,7 @@ class Chart {
     me.buildOrUpdateScales();
     const existingEvents = new Set(Object.keys(me._listeners));
     const newEvents = new Set(me.options.events);
-    if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ab)(existingEvents, newEvents) || !!this._responsiveListeners !== me.options.responsive) {
+    if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ac)(existingEvents, newEvents) || !!this._responsiveListeners !== me.options.responsive) {
       me.unbindEvents();
       me.bindEvents();
     }
@@ -5925,7 +6055,7 @@ class Chart {
       return;
     }
     if (useClip) {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(ctx, {
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, {
         left: clip.left === false ? 0 : area.left - clip.left,
         right: clip.right === false ? me.width : area.right + clip.right,
         top: clip.top === false ? 0 : area.top - clip.top,
@@ -5934,7 +6064,7 @@ class Chart {
     }
     meta.controller.draw();
     if (useClip) {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(ctx);
     }
     args.cancelable = false;
     me.notifyPlugins('afterDatasetDraw', args);
@@ -5994,20 +6124,25 @@ class Chart {
   getDataVisibility(index) {
     return !this._hiddenIndices[index];
   }
-  _updateDatasetVisibility(datasetIndex, visible) {
+  _updateVisibility(datasetIndex, dataIndex, visible) {
     const me = this;
     const mode = visible ? 'show' : 'hide';
     const meta = me.getDatasetMeta(datasetIndex);
     const anims = meta.controller._resolveAnimations(undefined, mode);
-    me.setDatasetVisibility(datasetIndex, visible);
-    anims.update(meta, {visible});
-    me.update((ctx) => ctx.datasetIndex === datasetIndex ? mode : undefined);
+    if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.h)(dataIndex)) {
+      meta.data[dataIndex].hidden = !visible;
+      me.update();
+    } else {
+      me.setDatasetVisibility(datasetIndex, visible);
+      anims.update(meta, {visible});
+      me.update((ctx) => ctx.datasetIndex === datasetIndex ? mode : undefined);
+    }
   }
-  hide(datasetIndex) {
-    this._updateDatasetVisibility(datasetIndex, false);
+  hide(datasetIndex, dataIndex) {
+    this._updateVisibility(datasetIndex, dataIndex, false);
   }
-  show(datasetIndex) {
-    this._updateDatasetVisibility(datasetIndex, true);
+  show(datasetIndex, dataIndex) {
+    this._updateVisibility(datasetIndex, dataIndex, true);
   }
   _destroyDatasetMeta(datasetIndex) {
     const me = this;
@@ -6029,7 +6164,7 @@ class Chart {
     me.config.clearCache();
     if (canvas) {
       me.unbindEvents();
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aa)(canvas, ctx);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ab)(canvas, ctx);
       me.platform.releaseContext(ctx);
       me.canvas = null;
       me.ctx = null;
@@ -6147,7 +6282,7 @@ class Chart {
         index,
       };
     });
-    const changed = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ac)(active, lastActive);
+    const changed = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ad)(active, lastActive);
     if (changed) {
       me._active = active;
       me._updateHoverStyles(active, lastActive);
@@ -6198,12 +6333,12 @@ class Chart {
     }
     me._lastEvent = null;
     if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.y)(e, me.chartArea, me._minPadding)) {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(options.onHover, [e, active, me], me);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(options.onHover, [e, active, me], me);
       if (e.type === 'mouseup' || e.type === 'click' || e.type === 'contextmenu') {
-        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(options.onClick, [e, active, me], me);
+        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(options.onClick, [e, active, me], me);
       }
     }
-    changed = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ac)(active, lastActive);
+    changed = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ad)(active, lastActive);
     if (changed || replay) {
       me._active = active;
       me._updateHoverStyles(active, lastActive, replay);
@@ -6225,7 +6360,7 @@ Object.defineProperties(Chart, {
   },
   overrides: {
     enumerable,
-    value: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z
+    value: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.$
   },
   registry: {
     enumerable,
@@ -6270,7 +6405,7 @@ function clipArc(ctx, element, endAngle) {
   ctx.clip();
 }
 function toRadiusCorners(value) {
-  return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ae)(value, ['outerStart', 'outerEnd', 'innerStart', 'innerEnd']);
+  return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.af)(value, ['outerStart', 'outerEnd', 'innerStart', 'innerEnd']);
 }
 function parseBorderRadius$1(arc, innerRadius, outerRadius, angleDelta) {
   const o = toRadiusCorners(arc.options.borderRadius);
@@ -6421,7 +6556,7 @@ class ArcElement extends Element {
   }
   inRange(chartX, chartY, useFinalPosition) {
     const point = this.getProps(['x', 'y'], useFinalPosition);
-    const {angle, distance} = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ad)(point, {x: chartX, y: chartY});
+    const {angle, distance} = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ae)(point, {x: chartX, y: chartY});
     const {startAngle, endAngle, innerRadius, outerRadius, circumference} = this.getProps([
       'startAngle',
       'endAngle',
@@ -6509,10 +6644,10 @@ function lineTo(ctx, previous, target) {
 }
 function getLineMethod(options) {
   if (options.stepped) {
-    return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.al;
+    return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.am;
   }
   if (options.tension || options.cubicInterpolationMode === 'monotone') {
-    return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.am;
+    return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.an;
   }
   return lineTo;
 }
@@ -6607,12 +6742,12 @@ function _getSegmentMethod(line) {
 }
 function _getInterpolationMethod(options) {
   if (options.stepped) {
-    return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ai;
-  }
-  if (options.tension || options.cubicInterpolationMode === 'monotone') {
     return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aj;
   }
-  return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ak;
+  if (options.tension || options.cubicInterpolationMode === 'monotone') {
+    return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ak;
+  }
+  return _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.al;
 }
 function strokePathWithCache(ctx, line, start, count) {
   let path = line._path;
@@ -6657,6 +6792,7 @@ class LineElement extends Element {
     this._segments = undefined;
     this._decimated = false;
     this._pointsUpdated = false;
+    this._datasetIndex = undefined;
     if (cfg) {
       Object.assign(this, cfg);
     }
@@ -6666,7 +6802,7 @@ class LineElement extends Element {
     const options = me.options;
     if ((options.tension || options.cubicInterpolationMode === 'monotone') && !options.stepped && !me._pointsUpdated) {
       const loop = options.spanGaps ? me._loop : me._fullLoop;
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.af)(me._points, options, chartArea, loop, indexAxis);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ag)(me._points, options, chartArea, loop, indexAxis);
       me._pointsUpdated = true;
     }
   }
@@ -6681,7 +6817,7 @@ class LineElement extends Element {
     return this._points;
   }
   get segments() {
-    return this._segments || (this._segments = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ag)(this, this.options.segment));
+    return this._segments || (this._segments = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ah)(this, this.options.segment));
   }
   first() {
     const segments = this.segments;
@@ -6699,7 +6835,7 @@ class LineElement extends Element {
     const options = me.options;
     const value = point[property];
     const points = me.points;
-    const segments = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ah)(me, {property, start: value, end: value});
+    const segments = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ai)(me, {property, start: value, end: value});
     if (!segments.length) {
       return;
     }
@@ -6814,16 +6950,16 @@ class PointElement extends Element {
     const borderWidth = radius && options.borderWidth || 0;
     return (radius + borderWidth) * 2;
   }
-  draw(ctx) {
+  draw(ctx, area) {
     const me = this;
     const options = me.options;
-    if (me.skip || options.radius < 0.1) {
+    if (me.skip || options.radius < 0.1 || !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.y)(me, area, me.size(options) / 2)) {
       return;
     }
     ctx.strokeStyle = options.borderColor;
     ctx.lineWidth = options.borderWidth;
     ctx.fillStyle = options.backgroundColor;
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.an)(ctx, options, me.x, me.y);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao)(ctx, options, me.x, me.y);
   }
   getRange() {
     const options = this.options || {};
@@ -6863,40 +6999,13 @@ function getBarBounds(bar, useFinalPosition) {
   }
   return {left, top, right, bottom};
 }
-function parseBorderSkipped(bar) {
-  let edge = bar.options.borderSkipped;
-  const res = {};
-  if (!edge) {
-    return res;
-  }
-  edge = bar.horizontal
-    ? parseEdge(edge, 'left', 'right', bar.base > bar.x)
-    : parseEdge(edge, 'bottom', 'top', bar.base < bar.y);
-  res[edge] = true;
-  return res;
-}
-function parseEdge(edge, a, b, reverse) {
-  if (reverse) {
-    edge = swap(edge, a, b);
-    edge = startEnd(edge, b, a);
-  } else {
-    edge = startEnd(edge, a, b);
-  }
-  return edge;
-}
-function swap(orig, v1, v2) {
-  return orig === v1 ? v2 : orig === v2 ? v1 : orig;
-}
-function startEnd(v, start, end) {
-  return v === 'start' ? start : v === 'end' ? end : v;
-}
 function skipOrLimit(skip, value, min, max) {
-  return skip ? 0 : Math.max(Math.min(value, max), min);
+  return skip ? 0 : (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.q)(value, min, max);
 }
 function parseBorderWidth(bar, maxW, maxH) {
   const value = bar.options.borderWidth;
-  const skip = parseBorderSkipped(bar);
-  const o = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ap)(value);
+  const skip = bar.borderSkipped;
+  const o = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aq)(value);
   return {
     t: skipOrLimit(skip.top, o.top, 0, maxH),
     r: skipOrLimit(skip.right, o.right, 0, maxW),
@@ -6907,9 +7016,9 @@ function parseBorderWidth(bar, maxW, maxH) {
 function parseBorderRadius(bar, maxW, maxH) {
   const {enableBorderRadius} = bar.getProps(['enableBorderRadius']);
   const value = bar.options.borderRadius;
-  const o = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aq)(value);
+  const o = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ar)(value);
   const maxR = Math.min(maxW, maxH);
-  const skip = parseBorderSkipped(bar);
+  const skip = bar.borderSkipped;
   const enableBorder = enableBorderRadius || (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.i)(value);
   return {
     topLeft: skipOrLimit(!enableBorder || skip.top || skip.left, o.topLeft, 0, maxR),
@@ -6961,6 +7070,19 @@ function hasRadius(radius) {
 function addNormalRectPath(ctx, rect) {
   ctx.rect(rect.x, rect.y, rect.w, rect.h);
 }
+function inflateRect(rect, amount, refRect = {}) {
+  const x = rect.x !== refRect.x ? -amount : 0;
+  const y = rect.y !== refRect.y ? -amount : 0;
+  const w = (rect.x + rect.w !== refRect.x + refRect.w ? amount : 0) - x;
+  const h = (rect.y + rect.h !== refRect.y + refRect.h ? amount : 0) - y;
+  return {
+    x: rect.x + x,
+    y: rect.y + y,
+    w: rect.w + w,
+    h: rect.h + h,
+    radius: rect.radius
+  };
+}
 class BarElement extends Element {
   constructor(cfg) {
     super();
@@ -6976,18 +7098,19 @@ class BarElement extends Element {
   draw(ctx) {
     const options = this.options;
     const {inner, outer} = boundingRects(this);
-    const addRectPath = hasRadius(outer.radius) ? _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao : addNormalRectPath;
+    const addRectPath = hasRadius(outer.radius) ? _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ap : addNormalRectPath;
+    const inflateAmount = 0.33;
     ctx.save();
     if (outer.w !== inner.w || outer.h !== inner.h) {
       ctx.beginPath();
-      addRectPath(ctx, outer);
+      addRectPath(ctx, inflateRect(outer, inflateAmount, inner));
       ctx.clip();
-      addRectPath(ctx, inner);
+      addRectPath(ctx, inflateRect(inner, -inflateAmount, outer));
       ctx.fillStyle = options.borderColor;
       ctx.fill('evenodd');
     }
     ctx.beginPath();
-    addRectPath(ctx, inner);
+    addRectPath(ctx, inflateRect(inner, inflateAmount, outer));
     ctx.fillStyle = options.backgroundColor;
     ctx.fill();
     ctx.restore();
@@ -7059,7 +7182,7 @@ function lttbDecimation(data, start, count, availableWidth, options) {
     avgX /= avgRangeLength;
     avgY /= avgRangeLength;
     const rangeOffs = Math.floor(i * bucketWidth) + 1 + start;
-    const rangeTo = Math.floor((i + 1) * bucketWidth) + 1 + start;
+    const rangeTo = Math.min(Math.floor((i + 1) * bucketWidth) + 1, count) + start;
     const {x: pointAx, y: pointAy} = data[a];
     maxArea = area = -1;
     for (j = rangeOffs; j < rangeTo; j++) {
@@ -7191,7 +7314,8 @@ var plugin_decimation = {
         return;
       }
       let {start, count} = getStartAndCountOfVisiblePointsSimplified(meta, data);
-      if (count <= 4 * availableWidth) {
+      const threshold = options.threshold || 4 * availableWidth;
+      if (count <= threshold) {
         cleanDecimatedDataset(dataset);
         return;
       }
@@ -7263,7 +7387,7 @@ function decodeFill(line, index, count) {
     }
     return target;
   }
-  return ['origin', 'start', 'end', 'stack'].indexOf(fill) >= 0 && fill;
+  return ['origin', 'start', 'end', 'stack', 'shape'].indexOf(fill) >= 0 && fill;
 }
 function computeLinearBoundary(source) {
   const {scale = {}, fill} = source;
@@ -7452,6 +7576,9 @@ function getTarget(source) {
   if (fill === 'stack') {
     return buildStackLine(source);
   }
+  if (fill === 'shape') {
+    return true;
+  }
   const boundary = computeBoundary(source);
   if (boundary instanceof simpleArc) {
     return boundary;
@@ -7513,8 +7640,8 @@ function getBounds(property, first, last, loop) {
   let start = first[property];
   let end = last[property];
   if (property === 'angle') {
-    start = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.as)(start);
-    end = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.as)(end);
+    start = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(start);
+    end = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(end);
   }
   return {property, start, end};
 }
@@ -7542,10 +7669,10 @@ function _segments(line, target, property) {
       });
       continue;
     }
-    const targetSegments = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ah)(target, bounds);
+    const targetSegments = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ai)(target, bounds);
     for (const tgt of targetSegments) {
       const subBounds = getBounds(property, tpoints[tgt.start], tpoints[tgt.end], tgt.loop);
-      const fillSources = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ar)(segment, points, subBounds);
+      const fillSources = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.as)(segment, points, subBounds);
       for (const fillSource of fillSources) {
         parts.push({
           source: fillSource,
@@ -7582,20 +7709,24 @@ function _fill(ctx, cfg) {
   const segments = _segments(line, target, property);
   for (const {source: src, target: tgt, start, end} of segments) {
     const {style: {backgroundColor = color} = {}} = src;
+    const notShape = target !== true;
     ctx.save();
     ctx.fillStyle = backgroundColor;
-    clipBounds(ctx, scale, getBounds(property, start, end));
+    clipBounds(ctx, scale, notShape && getBounds(property, start, end));
     ctx.beginPath();
     const lineLoop = !!line.pathSegment(ctx, src);
-    if (lineLoop) {
-      ctx.closePath();
-    } else {
-      interpolatedLineTo(ctx, target, end, property);
-    }
-    const targetLoop = !!target.pathSegment(ctx, tgt, {move: lineLoop, reverse: true});
-    const loop = lineLoop && targetLoop;
-    if (!loop) {
-      interpolatedLineTo(ctx, target, start, property);
+    let loop;
+    if (notShape) {
+      if (lineLoop) {
+        ctx.closePath();
+      } else {
+        interpolatedLineTo(ctx, target, end, property);
+      }
+      const targetLoop = !!target.pathSegment(ctx, tgt, {move: lineLoop, reverse: true});
+      loop = lineLoop && targetLoop;
+      if (!loop) {
+        interpolatedLineTo(ctx, target, start, property);
+      }
     }
     ctx.closePath();
     ctx.fill(loop ? 'evenodd' : 'nonzero');
@@ -7624,9 +7755,9 @@ function drawfill(ctx, source, area) {
   const color = lineOpts.backgroundColor;
   const {above = color, below = color} = fillOption || {};
   if (target && line.points.length) {
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(ctx, area);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, area);
     doFill(ctx, {line, target, above, below, area, scale, axis});
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(ctx);
   }
 }
 var plugin_filler = {
@@ -7764,7 +7895,7 @@ class Legend extends Element {
   buildLabels() {
     const me = this;
     const labelOpts = me.options.labels || {};
-    let legendItems = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(labelOpts.generateLabels, [me.chart], me) || [];
+    let legendItems = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(labelOpts.generateLabels, [me.chart], me) || [];
     if (labelOpts.filter) {
       legendItems = legendItems.filter((item) => labelOpts.filter(item, me.chart.data));
     }
@@ -7784,7 +7915,7 @@ class Legend extends Element {
       return;
     }
     const labelOpts = options.labels;
-    const labelFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(labelOpts.font);
+    const labelFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(labelOpts.font);
     const fontSize = labelFont.size;
     const titleHeight = me._computeTitleHeight();
     const {boxWidth, itemHeight} = getBoxSize(labelOpts, fontSize);
@@ -7859,41 +7990,30 @@ class Legend extends Element {
     }
     const titleHeight = me._computeTitleHeight();
     const {legendHitBoxes: hitboxes, options: {align, labels: {padding}, rtl}} = me;
+    const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(rtl, me.left, me.width);
     if (this.isHorizontal()) {
       let row = 0;
-      let left = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.left + padding, me.right - me.lineWidths[row]);
+      let left = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.left + padding, me.right - me.lineWidths[row]);
       for (const hitbox of hitboxes) {
         if (row !== hitbox.row) {
           row = hitbox.row;
-          left = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.left + padding, me.right - me.lineWidths[row]);
+          left = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.left + padding, me.right - me.lineWidths[row]);
         }
         hitbox.top += me.top + titleHeight + padding;
-        hitbox.left = left;
+        hitbox.left = rtlHelper.leftForLtr(rtlHelper.x(left), hitbox.width);
         left += hitbox.width + padding;
-      }
-      if (rtl) {
-        const boxMap = hitboxes.reduce((map, box) => {
-          map[box.row] = map[box.row] || [];
-          map[box.row].push(box);
-          return map;
-        }, {});
-        const newBoxes = [];
-        Object.keys(boxMap).forEach(key => {
-          boxMap[key].reverse();
-          newBoxes.push(...boxMap[key]);
-        });
-        me.legendHitBoxes = newBoxes;
       }
     } else {
       let col = 0;
-      let top = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.top + titleHeight + padding, me.bottom - me.columnSizes[col].height);
+      let top = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.top + titleHeight + padding, me.bottom - me.columnSizes[col].height);
       for (const hitbox of hitboxes) {
         if (hitbox.col !== col) {
           col = hitbox.col;
-          top = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.top + titleHeight + padding, me.bottom - me.columnSizes[col].height);
+          top = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.top + titleHeight + padding, me.bottom - me.columnSizes[col].height);
         }
         hitbox.top = top;
         hitbox.left += me.left + padding;
+        hitbox.left = rtlHelper.leftForLtr(rtlHelper.x(hitbox.left), hitbox.width);
         top += hitbox.height + padding;
       }
     }
@@ -7905,9 +8025,9 @@ class Legend extends Element {
     const me = this;
     if (me.options.display) {
       const ctx = me.ctx;
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.S)(ctx, me);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, me);
       me._draw();
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(ctx);
     }
   }
   _draw() {
@@ -7915,8 +8035,8 @@ class Legend extends Element {
     const {options: opts, columnSizes, lineWidths, ctx} = me;
     const {align, labels: labelOpts} = opts;
     const defaultColor = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.d.color;
-    const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(opts.rtl, me.left, me.width);
-    const labelFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(labelOpts.font);
+    const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(opts.rtl, me.left, me.width);
+    const labelFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(labelOpts.font);
     const {color: fontColor, padding} = labelOpts;
     const fontSize = labelFont.size;
     const halfFontSize = fontSize / 2;
@@ -7949,14 +8069,14 @@ class Legend extends Element {
         };
         const centerX = rtlHelper.xPlus(x, boxWidth / 2);
         const centerY = y + halfFontSize;
-        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.an)(ctx, drawOptions, centerX, centerY);
+        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao)(ctx, drawOptions, centerX, centerY);
       } else {
         const yBoxTop = y + Math.max((fontSize - boxHeight) / 2, 0);
         const xBoxLeft = rtlHelper.leftForLtr(x, boxWidth);
-        const borderRadius = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aq)(legendItem.borderRadius);
+        const borderRadius = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ar)(legendItem.borderRadius);
         ctx.beginPath();
         if (Object.values(borderRadius).some(v => v !== 0)) {
-          (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao)(ctx, {
+          (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ap)(ctx, {
             x: xBoxLeft,
             y: yBoxTop,
             w: boxWidth,
@@ -7974,7 +8094,7 @@ class Legend extends Element {
       ctx.restore();
     };
     const fillText = function(x, y, legendItem) {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, legendItem.text, x, y + (itemHeight / 2), labelFont, {
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx, legendItem.text, x, y + (itemHeight / 2), labelFont, {
         strikethrough: legendItem.hidden,
         textAlign: rtlHelper.textAlign(legendItem.textAlign)
       });
@@ -7983,18 +8103,18 @@ class Legend extends Element {
     const titleHeight = this._computeTitleHeight();
     if (isHorizontal) {
       cursor = {
-        x: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.left + padding, me.right - lineWidths[0]),
+        x: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.left + padding, me.right - lineWidths[0]),
         y: me.top + padding + titleHeight,
         line: 0
       };
     } else {
       cursor = {
         x: me.left + padding,
-        y: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.top + titleHeight + padding, me.bottom - columnSizes[0].height),
+        y: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.top + titleHeight + padding, me.bottom - columnSizes[0].height),
         line: 0
       };
     }
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(me.ctx, opts.textDirection);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.av)(me.ctx, opts.textDirection);
     const lineHeight = itemHeight + padding;
     me.legendItems.forEach((legendItem, i) => {
       ctx.strokeStyle = legendItem.fontColor || fontColor;
@@ -8009,16 +8129,16 @@ class Legend extends Element {
         if (i > 0 && x + width + padding > me.right) {
           y = cursor.y += lineHeight;
           cursor.line++;
-          x = cursor.x = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.left + padding, me.right - lineWidths[cursor.line]);
+          x = cursor.x = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.left + padding, me.right - lineWidths[cursor.line]);
         }
       } else if (i > 0 && y + lineHeight > me.bottom) {
         x = cursor.x = x + columnSizes[cursor.line].width + padding;
         cursor.line++;
-        y = cursor.y = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, me.top + titleHeight + padding, me.bottom - columnSizes[cursor.line].height);
+        y = cursor.y = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, me.top + titleHeight + padding, me.bottom - columnSizes[cursor.line].height);
       }
       const realX = rtlHelper.x(x);
       drawLegendBox(realX, y, legendItem);
-      x = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.av)(textAlign, x + boxWidth + halfFontSize, isHorizontal ? x + width : me.right, opts.rtl);
+      x = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aw)(textAlign, x + boxWidth + halfFontSize, isHorizontal ? x + width : me.right, opts.rtl);
       fillText(rtlHelper.x(x), y, legendItem);
       if (isHorizontal) {
         cursor.x += width + padding;
@@ -8026,18 +8146,18 @@ class Legend extends Element {
         cursor.y += lineHeight;
       }
     });
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aw)(me.ctx, opts.textDirection);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax)(me.ctx, opts.textDirection);
   }
   drawTitle() {
     const me = this;
     const opts = me.options;
     const titleOpts = opts.title;
-    const titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(titleOpts.font);
+    const titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(titleOpts.font);
     const titlePadding = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.A)(titleOpts.padding);
     if (!titleOpts.display) {
       return;
     }
-    const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(opts.rtl, me.left, me.width);
+    const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(opts.rtl, me.left, me.width);
     const ctx = me.ctx;
     const position = titleOpts.position;
     const halfFontSize = titleFont.size / 2;
@@ -8048,22 +8168,22 @@ class Legend extends Element {
     if (this.isHorizontal()) {
       maxWidth = Math.max(...me.lineWidths);
       y = me.top + topPaddingPlusHalfFontSize;
-      left = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(opts.align, left, me.right - maxWidth);
+      left = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(opts.align, left, me.right - maxWidth);
     } else {
       const maxHeight = me.columnSizes.reduce((acc, size) => Math.max(acc, size.height), 0);
-      y = topPaddingPlusHalfFontSize + (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(opts.align, me.top, me.bottom - maxHeight - opts.labels.padding - me._computeTitleHeight());
+      y = topPaddingPlusHalfFontSize + (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(opts.align, me.top, me.bottom - maxHeight - opts.labels.padding - me._computeTitleHeight());
     }
-    const x = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(position, left, left + maxWidth);
-    ctx.textAlign = rtlHelper.textAlign((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(position));
+    const x = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(position, left, left + maxWidth);
+    ctx.textAlign = rtlHelper.textAlign((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(position));
     ctx.textBaseline = 'middle';
     ctx.strokeStyle = titleOpts.color;
     ctx.fillStyle = titleOpts.color;
     ctx.font = titleFont.string;
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, titleOpts.text, x, y, titleFont);
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx, titleOpts.text, x, y, titleFont);
   }
   _computeTitleHeight() {
     const titleOpts = this.options.title;
-    const titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(titleOpts.font);
+    const titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(titleOpts.font);
     const titlePadding = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.A)(titleOpts.padding);
     return titleOpts.display ? titleFont.lineHeight + titlePadding.height : 0;
   }
@@ -8092,14 +8212,14 @@ class Legend extends Element {
       const previous = me._hoveredItem;
       const sameItem = itemsEqual(previous, hoveredItem);
       if (previous && !sameItem) {
-        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(opts.onLeave, [e, previous, me], me);
+        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(opts.onLeave, [e, previous, me], me);
       }
       me._hoveredItem = hoveredItem;
       if (hoveredItem && !sameItem) {
-        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(opts.onHover, [e, hoveredItem, me], me);
+        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(opts.onHover, [e, hoveredItem, me], me);
       }
     } else if (hoveredItem) {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(opts.onClick, [e, hoveredItem, me], me);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(opts.onClick, [e, hoveredItem, me], me);
     }
   }
 }
@@ -8234,7 +8354,7 @@ class Title extends Element {
     me.height = me.bottom = maxHeight;
     const lineCount = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(opts.text) ? opts.text.length : 1;
     me._padding = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.A)(opts.padding);
-    const textSize = lineCount * (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(opts.font).lineHeight + me._padding.height;
+    const textSize = lineCount * (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(opts.font).lineHeight + me._padding.height;
     if (me.isHorizontal()) {
       me.height = textSize;
     } else {
@@ -8251,17 +8371,17 @@ class Title extends Element {
     let rotation = 0;
     let maxWidth, titleX, titleY;
     if (this.isHorizontal()) {
-      titleX = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, left, right);
+      titleX = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, left, right);
       titleY = top + offset;
       maxWidth = right - left;
     } else {
       if (options.position === 'left') {
         titleX = left + offset;
-        titleY = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, bottom, top);
+        titleY = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, bottom, top);
         rotation = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.P * -0.5;
       } else {
         titleX = right - offset;
-        titleY = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(align, top, bottom);
+        titleY = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Z)(align, top, bottom);
         rotation = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.P * 0.5;
       }
       maxWidth = bottom - top;
@@ -8275,15 +8395,15 @@ class Title extends Element {
     if (!opts.display) {
       return;
     }
-    const fontOpts = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(opts.font);
+    const fontOpts = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(opts.font);
     const lineHeight = fontOpts.lineHeight;
     const offset = lineHeight / 2 + me._padding.top;
     const {titleX, titleY, maxWidth, rotation} = me._drawArgs(offset);
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, opts.text, 0, 0, fontOpts, {
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx, opts.text, 0, 0, fontOpts, {
       color: opts.color,
       maxWidth,
       rotation,
-      textAlign: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(opts.align),
+      textAlign: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.Y)(opts.align),
       textBaseline: 'middle',
       translation: [titleX, titleY],
     });
@@ -8414,7 +8534,7 @@ const positioners = {
       const el = items[i].element;
       if (el && el.hasValue()) {
         const center = el.getCenterPoint();
-        const d = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay)(eventPosition, center);
+        const d = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.az)(eventPosition, center);
         if (d < minDistance) {
           minDistance = d;
           nearestElement = el;
@@ -8468,9 +8588,9 @@ function getTooltipSize(tooltip, options) {
   const ctx = tooltip._chart.ctx;
   const {body, footer, title} = tooltip;
   const {boxWidth, boxHeight} = options;
-  const bodyFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.bodyFont);
-  const titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.titleFont);
-  const footerFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.footerFont);
+  const bodyFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.bodyFont);
+  const titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.titleFont);
+  const footerFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.footerFont);
   const titleLineCount = title.length;
   const footerLineCount = footer.length;
   const bodyLineItemCount = body.length;
@@ -8858,11 +8978,11 @@ class Tooltip extends Element {
     const length = title.length;
     let titleFont, titleSpacing, i;
     if (length) {
-      const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(options.rtl, me.x, me.width);
+      const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(options.rtl, me.x, me.width);
       pt.x = getAlignedX(me, options.titleAlign, options);
       ctx.textAlign = rtlHelper.textAlign(options.titleAlign);
       ctx.textBaseline = 'middle';
-      titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.titleFont);
+      titleFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.titleFont);
       titleSpacing = options.titleSpacing;
       ctx.fillStyle = options.titleColor;
       ctx.font = titleFont.string;
@@ -8880,7 +9000,7 @@ class Tooltip extends Element {
     const labelColors = me.labelColors[i];
     const labelPointStyle = me.labelPointStyles[i];
     const {boxHeight, boxWidth} = options;
-    const bodyFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.bodyFont);
+    const bodyFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.bodyFont);
     const colorX = getAlignedX(me, 'left', options);
     const rtlColorX = rtlHelper.x(colorX);
     const yOffSet = boxHeight < bodyFont.lineHeight ? (bodyFont.lineHeight - boxHeight) / 2 : 0;
@@ -8896,10 +9016,10 @@ class Tooltip extends Element {
       const centerY = colorY + boxHeight / 2;
       ctx.strokeStyle = options.multiKeyBackground;
       ctx.fillStyle = options.multiKeyBackground;
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.an)(ctx, drawOptions, centerX, centerY);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao)(ctx, drawOptions, centerX, centerY);
       ctx.strokeStyle = labelColors.borderColor;
       ctx.fillStyle = labelColors.backgroundColor;
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.an)(ctx, drawOptions, centerX, centerY);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao)(ctx, drawOptions, centerX, centerY);
     } else {
       ctx.lineWidth = labelColors.borderWidth || 1;
       ctx.strokeStyle = labelColors.borderColor;
@@ -8907,11 +9027,11 @@ class Tooltip extends Element {
       ctx.lineDashOffset = labelColors.borderDashOffset || 0;
       const outerX = rtlHelper.leftForLtr(rtlColorX, boxWidth);
       const innerX = rtlHelper.leftForLtr(rtlHelper.xPlus(rtlColorX, 1), boxWidth - 2);
-      const borderRadius = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aq)(labelColors.borderRadius);
+      const borderRadius = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ar)(labelColors.borderRadius);
       if (Object.values(borderRadius).some(v => v !== 0)) {
         ctx.beginPath();
         ctx.fillStyle = options.multiKeyBackground;
-        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao)(ctx, {
+        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ap)(ctx, {
           x: outerX,
           y: colorY,
           w: boxWidth,
@@ -8922,7 +9042,7 @@ class Tooltip extends Element {
         ctx.stroke();
         ctx.fillStyle = labelColors.backgroundColor;
         ctx.beginPath();
-        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ao)(ctx, {
+        (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ap)(ctx, {
           x: innerX,
           y: colorY + 1,
           w: boxWidth - 2,
@@ -8944,10 +9064,10 @@ class Tooltip extends Element {
     const me = this;
     const {body} = me;
     const {bodySpacing, bodyAlign, displayColors, boxHeight, boxWidth} = options;
-    const bodyFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.bodyFont);
+    const bodyFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.bodyFont);
     let bodyLineHeight = bodyFont.lineHeight;
     let xLinePadding = 0;
-    const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(options.rtl, me.x, me.width);
+    const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(options.rtl, me.x, me.width);
     const fillLineOfText = function(line) {
       ctx.fillText(line, rtlHelper.x(pt.x + xLinePadding), pt.y + bodyLineHeight / 2);
       pt.y += bodyLineHeight + bodySpacing;
@@ -8990,12 +9110,12 @@ class Tooltip extends Element {
     const length = footer.length;
     let footerFont, i;
     if (length) {
-      const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(options.rtl, me.x, me.width);
+      const rtlHelper = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(options.rtl, me.x, me.width);
       pt.x = getAlignedX(me, options.footerAlign, options);
       pt.y += options.footerMarginTop;
       ctx.textAlign = rtlHelper.textAlign(options.footerAlign);
       ctx.textBaseline = 'middle';
-      footerFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(options.footerFont);
+      footerFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(options.footerFont);
       ctx.fillStyle = options.footerColor;
       ctx.font = footerFont.string;
       for (i = 0; i < length; ++i) {
@@ -9089,12 +9209,12 @@ class Tooltip extends Element {
       ctx.save();
       ctx.globalAlpha = opacity;
       me.drawBackground(pt, ctx, tooltipSize, options);
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.au)(ctx, options.textDirection);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.av)(ctx, options.textDirection);
       pt.y += padding.top;
       me.drawTitle(pt, ctx, options);
       me.drawBody(pt, ctx, options);
       me.drawFooter(pt, ctx, options);
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aw)(ctx, options.textDirection);
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax)(ctx, options.textDirection);
       ctx.restore();
     }
   }
@@ -9115,7 +9235,7 @@ class Tooltip extends Element {
         index,
       };
     });
-    const changed = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ac)(lastActive, active);
+    const changed = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ad)(lastActive, active);
     const positionChanged = me._positionChanged(active, eventPosition);
     if (changed || positionChanged) {
       me._active = active;
@@ -9136,7 +9256,7 @@ class Tooltip extends Element {
       }
     }
     const positionChanged = me._positionChanged(active, e);
-    changed = replay || !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ac)(active, lastActive) || positionChanged;
+    changed = replay || !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ad)(active, lastActive) || positionChanged;
     if (changed) {
       me._active = active;
       if (options.enabled || options.external) {
@@ -9245,7 +9365,7 @@ var plugin_tooltip = {
       }
     },
     callbacks: {
-      beforeTitle: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
+      beforeTitle: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
       title(tooltipItems) {
         if (tooltipItems.length > 0) {
           const item = tooltipItems[0];
@@ -9261,9 +9381,9 @@ var plugin_tooltip = {
         }
         return '';
       },
-      afterTitle: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
-      beforeBody: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
-      beforeLabel: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
+      afterTitle: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
+      beforeBody: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
+      beforeLabel: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
       label(tooltipItem) {
         if (this && this.options && this.options.mode === 'dataset') {
           return tooltipItem.label + ': ' + tooltipItem.formattedValue || tooltipItem.formattedValue;
@@ -9301,11 +9421,11 @@ var plugin_tooltip = {
           rotation: options.rotation,
         };
       },
-      afterLabel: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
-      afterBody: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
-      beforeFooter: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
-      footer: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax,
-      afterFooter: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ax
+      afterLabel: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
+      afterBody: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
+      beforeFooter: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
+      footer: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay,
+      afterFooter: _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.ay
     }
   },
   defaultRoutes: {
@@ -9453,14 +9573,14 @@ function generateTicks$1(generationOptions, dataRange) {
   const maxDefined = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(max);
   const countDefined = !(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(count);
   const minSpacing = (rmax - rmin) / (maxDigits + 1);
-  let spacing = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aA)((rmax - rmin) / maxSpaces / unit) * unit;
+  let spacing = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aB)((rmax - rmin) / maxSpaces / unit) * unit;
   let factor, niceMin, niceMax, numSpaces;
   if (spacing < MIN_SPACING && !minDefined && !maxDefined) {
     return [{value: rmin}, {value: rmax}];
   }
   numSpaces = Math.ceil(rmax / spacing) - Math.floor(rmin / spacing);
   if (numSpaces > maxSpaces) {
-    spacing = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aA)(numSpaces * spacing / maxSpaces / unit) * unit;
+    spacing = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aB)(numSpaces * spacing / maxSpaces / unit) * unit;
   }
   if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(precision)) {
     factor = Math.pow(10, precision);
@@ -9473,7 +9593,7 @@ function generateTicks$1(generationOptions, dataRange) {
     niceMin = rmin;
     niceMax = rmax;
   }
-  if (minDefined && maxDefined && step && (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aB)((max - min) / step, spacing / 1000)) {
+  if (minDefined && maxDefined && step && (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aC)((max - min) / step, spacing / 1000)) {
     numSpaces = Math.round(Math.min((max - min) / spacing, maxTicks));
     spacing = (max - min) / numSpaces;
     niceMin = min;
@@ -9485,15 +9605,15 @@ function generateTicks$1(generationOptions, dataRange) {
     spacing = (niceMax - niceMin) / numSpaces;
   } else {
     numSpaces = (niceMax - niceMin) / spacing;
-    if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aC)(numSpaces, Math.round(numSpaces), spacing / 1000)) {
+    if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aD)(numSpaces, Math.round(numSpaces), spacing / 1000)) {
       numSpaces = Math.round(numSpaces);
     } else {
       numSpaces = Math.ceil(numSpaces);
     }
   }
   const decimalPlaces = Math.max(
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aD)(spacing),
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aD)(niceMin)
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aE)(spacing),
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aE)(niceMin)
   );
   factor = Math.pow(10, (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(precision) ? decimalPlaces : precision);
   niceMin = Math.round(niceMin * factor) / factor;
@@ -9505,7 +9625,7 @@ function generateTicks$1(generationOptions, dataRange) {
       if (niceMin < min) {
         j++;
       }
-      if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aC)(Math.round((niceMin + j * spacing) * factor) / factor, min, relativeLabelSize(min, minSpacing, generationOptions))) {
+      if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aD)(Math.round((niceMin + j * spacing) * factor) / factor, min, relativeLabelSize(min, minSpacing, generationOptions))) {
         j++;
       }
     } else if (niceMin < min) {
@@ -9516,7 +9636,7 @@ function generateTicks$1(generationOptions, dataRange) {
     ticks.push({value: Math.round((niceMin + j * spacing) * factor) / factor});
   }
   if (maxDefined && includeBounds && niceMax !== max) {
-    if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aC)(ticks[ticks.length - 1].value, max, relativeLabelSize(max, minSpacing, generationOptions))) {
+    if ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aD)(ticks[ticks.length - 1].value, max, relativeLabelSize(max, minSpacing, generationOptions))) {
       ticks[ticks.length - 1].value = max;
     } else {
       ticks.push({value: max});
@@ -9567,9 +9687,13 @@ class LinearScaleBase extends Scale {
       }
     }
     if (min === max) {
-      setMax(max + 1);
+      let offset = 1;
+      if (max >= Number.MAX_SAFE_INTEGER || min <= Number.MIN_SAFE_INTEGER) {
+        offset = Math.abs(max * 0.05);
+      }
+      setMax(max + offset);
       if (!beginAtZero) {
-        setMin(min - 1);
+        setMin(min - offset);
       }
     }
     me.min = min;
@@ -9616,7 +9740,7 @@ class LinearScaleBase extends Scale {
     const dataRange = me._range || me;
     const ticks = generateTicks$1(numericGeneratorOptions, dataRange);
     if (opts.bounds === 'ticks') {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.az)(ticks, me, 'value');
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aA)(ticks, me, 'value');
     }
     if (opts.reverse) {
       ticks.reverse();
@@ -9680,15 +9804,15 @@ LinearScale.defaults = {
 };
 
 function isMajor(tickVal) {
-  const remain = tickVal / (Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(tickVal))));
+  const remain = tickVal / (Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(tickVal))));
   return remain === 1;
 }
 function generateTicks(generationOptions, dataRange) {
-  const endExp = Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(dataRange.max));
+  const endExp = Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(dataRange.max));
   const endSignificand = Math.ceil(dataRange.max / Math.pow(10, endExp));
   const ticks = [];
-  let tickVal = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(generationOptions.min, Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(dataRange.min))));
-  let exp = Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(tickVal));
+  let tickVal = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(generationOptions.min, Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(dataRange.min))));
+  let exp = Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(tickVal));
   let significand = Math.floor(tickVal / Math.pow(10, exp));
   let precision = exp < 0 ? Math.pow(10, Math.abs(exp)) : 1;
   do {
@@ -9701,7 +9825,7 @@ function generateTicks(generationOptions, dataRange) {
     }
     tickVal = Math.round(significand * Math.pow(10, exp) * precision) / precision;
   } while (exp < endExp || (exp === endExp && significand < endSignificand));
-  const lastTick = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.K)(generationOptions.max, tickVal);
+  const lastTick = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(generationOptions.max, tickVal);
   ticks.push({value: lastTick, major: isMajor(tickVal)});
   return ticks;
 }
@@ -9738,7 +9862,7 @@ class LogarithmicScale extends Scale {
     let max = me.max;
     const setMin = v => (min = minDefined ? min : v);
     const setMax = v => (max = maxDefined ? max : v);
-    const exp = (v, m) => Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(v)) + m);
+    const exp = (v, m) => Math.pow(10, Math.floor((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(v)) + m);
     if (min === max) {
       if (min <= 0) {
         setMin(1);
@@ -9769,7 +9893,7 @@ class LogarithmicScale extends Scale {
     };
     const ticks = generateTicks(generationOptions, me);
     if (opts.bounds === 'ticks') {
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.az)(ticks, me, 'value');
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aA)(ticks, me, 'value');
     }
     if (opts.reverse) {
       ticks.reverse();
@@ -9788,8 +9912,8 @@ class LogarithmicScale extends Scale {
     const me = this;
     const start = me.min;
     super.configure();
-    me._startValue = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(start);
-    me._valueRange = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(me.max) - (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(start);
+    me._startValue = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(start);
+    me._valueRange = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(me.max) - (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(start);
   }
   getPixelForValue(value) {
     const me = this;
@@ -9801,7 +9925,7 @@ class LogarithmicScale extends Scale {
     }
     return me.getPixelForDecimal(value === me.min
       ? 0
-      : ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.I)(value) - me._startValue) / me._valueRange);
+      : ((0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.J)(value) - me._startValue) / me._valueRange);
   }
   getValueForPixel(pixel) {
     const me = this;
@@ -9830,7 +9954,7 @@ function getTickBackdropHeight(opts) {
 function measureLabelSize(ctx, font, label) {
   label = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.b)(label) ? label : [label];
   return {
-    w: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aE)(ctx, font.string, label),
+    w: (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aF)(ctx, font.string, label),
     h: label.length * font.lineHeight
   };
 }
@@ -9863,14 +9987,14 @@ function fitWithPointLabels(scale) {
   const padding = [];
   const valueCount = scale.getLabels().length;
   for (let i = 0; i < valueCount; i++) {
-    const opts = scale.options.pointLabels.setContext(scale.getContext(i));
+    const opts = scale.options.pointLabels.setContext(scale.getPointLabelContext(i));
     padding[i] = opts.padding;
     const pointPosition = scale.getPointPosition(i, scale.drawingArea + padding[i]);
-    const plFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(opts.font);
+    const plFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(opts.font);
     const textSize = measureLabelSize(scale.ctx, plFont, scale._pointLabels[i]);
     labelSizes[i] = textSize;
     const angleRadians = scale.getIndexAngle(i);
-    const angle = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.N)(angleRadians);
+    const angle = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.O)(angleRadians);
     const hLimits = determineLimits(angle, pointPosition.x, textSize.w, 0, 180);
     const vLimits = determineLimits(angle, pointPosition.y, textSize.h, 90, 270);
     if (hLimits.start < furthestLimits.l) {
@@ -9902,7 +10026,7 @@ function buildPointLabelItems(scale, labelSizes, padding) {
   for (let i = 0; i < valueCount; i++) {
     const extra = (i === 0 ? tickBackdropHeight / 2 : 0);
     const pointLabelPosition = scale.getPointPosition(i, outerDistance + extra + padding[i]);
-    const angle = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.N)(scale.getIndexAngle(i));
+    const angle = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.O)(scale.getIndexAngle(i));
     const size = labelSizes[i];
     const y = yForAngle(pointLabelPosition.y, size.h, angle);
     const textAlign = getTextAlignForAngle(angle);
@@ -9946,8 +10070,8 @@ function yForAngle(y, h, angle) {
 function drawPointLabels(scale, labelCount) {
   const {ctx, options: {pointLabels}} = scale;
   for (let i = labelCount - 1; i >= 0; i--) {
-    const optsAtIndex = pointLabels.setContext(scale.getContext(i));
-    const plFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(optsAtIndex.font);
+    const optsAtIndex = pointLabels.setContext(scale.getPointLabelContext(i));
+    const plFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(optsAtIndex.font);
     const {x, y, textAlign, left, top, right, bottom} = scale._pointLabelItems[i];
     const {backdropColor} = optsAtIndex;
     if (!(0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.j)(backdropColor)) {
@@ -9955,7 +10079,7 @@ function drawPointLabels(scale, labelCount) {
       ctx.fillStyle = backdropColor;
       ctx.fillRect(left - padding.left, top - padding.top, right - left + padding.width, bottom - top + padding.height);
     }
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(
       ctx,
       scale._pointLabels[i],
       x,
@@ -10003,6 +10127,13 @@ function drawRadiusLine(scale, gridLineOpts, radius, labelCount) {
 function numberOrZero(param) {
   return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.p)(param) ? param : 0;
 }
+function createPointLabelContext(parent, index, label) {
+  return Object.assign(Object.create(parent), {
+    label,
+    index,
+    type: 'pointLabel'
+  });
+}
 class RadialLinearScale extends LinearScaleBase {
   constructor(cfg) {
     super(cfg);
@@ -10035,7 +10166,7 @@ class RadialLinearScale extends LinearScaleBase {
     const me = this;
     LinearScaleBase.prototype.generateTickLabels.call(me, ticks);
     me._pointLabels = me.getLabels().map((value, index) => {
-      const label = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(me.options.pointLabels.callback, [value, index], me);
+      const label = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(me.options.pointLabels.callback, [value, index], me);
       return label || label === 0 ? label : '';
     });
   }
@@ -10075,7 +10206,7 @@ class RadialLinearScale extends LinearScaleBase {
   getIndexAngle(index) {
     const angleMultiplier = _chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.T / this.getLabels().length;
     const startAngle = this.options.startAngle || 0;
-    return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.as)(index * angleMultiplier + (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.t)(startAngle));
+    return (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.at)(index * angleMultiplier + (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.t)(startAngle));
   }
   getDistanceFromCenterForValue(value) {
     const me = this;
@@ -10095,6 +10226,14 @@ class RadialLinearScale extends LinearScaleBase {
     const me = this;
     const scaledDistance = distance / (me.drawingArea / (me.max - me.min));
     return me.options.reverse ? me.max - scaledDistance : me.min + scaledDistance;
+  }
+  getPointLabelContext(index) {
+    const me = this;
+    const pointLabels = me._pointLabels || [];
+    if (index >= 0 && index < pointLabels.length) {
+      const pointLabel = pointLabels[index];
+      return createPointLabelContext(me.getContext(), index, pointLabel);
+    }
   }
   getPointPosition(index, distanceFromCenter) {
     const me = this;
@@ -10156,7 +10295,7 @@ class RadialLinearScale extends LinearScaleBase {
     if (angleLines.display) {
       ctx.save();
       for (i = me.getLabels().length - 1; i >= 0; i--) {
-        const optsAtIndex = angleLines.setContext(me.getContext(i));
+        const optsAtIndex = angleLines.setContext(me.getPointLabelContext(i));
         const {color, lineWidth} = optsAtIndex;
         if (!lineWidth || !color) {
           continue;
@@ -10196,7 +10335,7 @@ class RadialLinearScale extends LinearScaleBase {
         return;
       }
       const optsAtIndex = tickOpts.setContext(me.getContext(index));
-      const tickFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.W)(optsAtIndex.font);
+      const tickFont = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.X)(optsAtIndex.font);
       offset = me.getDistanceFromCenterForValue(me.ticks[index].value);
       if (optsAtIndex.showLabelBackdrop) {
         ctx.font = tickFont.string;
@@ -10210,7 +10349,7 @@ class RadialLinearScale extends LinearScaleBase {
           tickFont.size + padding.height
         );
       }
-      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.U)(ctx, tick.label, 0, -offset, tickFont, {
+      (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.V)(ctx, tick.label, 0, -offset, tickFont, {
         color: optsAtIndex.color,
       });
     });
@@ -10332,7 +10471,7 @@ function addTick(ticks, time, timestamps) {
   if (!timestamps) {
     ticks[time] = true;
   } else if (timestamps.length) {
-    const {lo, hi} = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aG)(timestamps, time);
+    const {lo, hi} = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aH)(timestamps, time);
     const timestamp = timestamps[lo] >= time ? timestamps[lo] : timestamps[hi];
     ticks[timestamp] = true;
   }
@@ -10382,7 +10521,7 @@ class TimeScale extends Scale {
   init(scaleOpts, opts) {
     const time = scaleOpts.time || (scaleOpts.time = {});
     const adapter = this._adapter = new adapters._date(scaleOpts.adapters.date);
-    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a6)(time.displayFormats, adapter.formats());
+    (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.a7)(time.displayFormats, adapter.formats());
     this._parseOpts = {
       parser: time.parser,
       round: time.round,
@@ -10452,7 +10591,7 @@ class TimeScale extends Scale {
     }
     const min = me.min;
     const max = me.max;
-    const ticks = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aF)(timestamps, min, max);
+    const ticks = (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.aG)(timestamps, min, max);
     me._unit = timeOpts.unit || (tickOpts.autoSkip
       ? determineUnitForAutoTicks(timeOpts.minUnit, me.min, me.max, me._getLabelCapacity(min))
       : determineUnitForFormatting(me, ticks.length, timeOpts.minUnit, me.min, me.max));
@@ -10539,7 +10678,7 @@ class TimeScale extends Scale {
     const major = majorUnit && majorFormat && tick && tick.major;
     const label = me._adapter.format(time, format || (major ? majorFormat : minorFormat));
     const formatter = options.ticks.callback;
-    return formatter ? (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.L)(formatter, [label, index, ticks], me) : label;
+    return formatter ? (0,_chunks_helpers_segment_js__WEBPACK_IMPORTED_MODULE_0__.M)(formatter, [label, index, ticks], me) : label;
   }
   generateTickLabels(ticks) {
     let i, ilen, tick;
@@ -10762,7 +10901,7 @@ const registerables = [
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "$": () => (/* binding */ merge),
+/* harmony export */   "$": () => (/* binding */ overrides),
 /* harmony export */   "A": () => (/* binding */ toPadding),
 /* harmony export */   "B": () => (/* binding */ each),
 /* harmony export */   "C": () => (/* binding */ getMaximumSize),
@@ -10771,86 +10910,87 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "F": () => (/* binding */ throttled),
 /* harmony export */   "G": () => (/* binding */ supportsEventListenerOptions),
 /* harmony export */   "H": () => (/* binding */ HALF_PI),
-/* harmony export */   "I": () => (/* binding */ log10),
-/* harmony export */   "J": () => (/* binding */ _factorize),
-/* harmony export */   "K": () => (/* binding */ finiteOrDefault),
-/* harmony export */   "L": () => (/* binding */ callback),
-/* harmony export */   "M": () => (/* binding */ _addGrace),
-/* harmony export */   "N": () => (/* binding */ toDegrees),
-/* harmony export */   "O": () => (/* binding */ _measureText),
+/* harmony export */   "I": () => (/* binding */ _isDomSupported),
+/* harmony export */   "J": () => (/* binding */ log10),
+/* harmony export */   "K": () => (/* binding */ _factorize),
+/* harmony export */   "L": () => (/* binding */ finiteOrDefault),
+/* harmony export */   "M": () => (/* binding */ callback),
+/* harmony export */   "N": () => (/* binding */ _addGrace),
+/* harmony export */   "O": () => (/* binding */ toDegrees),
 /* harmony export */   "P": () => (/* binding */ PI),
-/* harmony export */   "Q": () => (/* binding */ _int16Range),
-/* harmony export */   "R": () => (/* binding */ _alignPixel),
-/* harmony export */   "S": () => (/* binding */ clipArea),
+/* harmony export */   "Q": () => (/* binding */ _measureText),
+/* harmony export */   "R": () => (/* binding */ _int16Range),
+/* harmony export */   "S": () => (/* binding */ _alignPixel),
 /* harmony export */   "T": () => (/* binding */ TAU),
-/* harmony export */   "U": () => (/* binding */ renderText),
-/* harmony export */   "V": () => (/* binding */ unclipArea),
-/* harmony export */   "W": () => (/* binding */ toFont),
-/* harmony export */   "X": () => (/* binding */ _toLeftRightCenter),
-/* harmony export */   "Y": () => (/* binding */ _alignStartEnd),
-/* harmony export */   "Z": () => (/* binding */ overrides),
+/* harmony export */   "U": () => (/* binding */ clipArea),
+/* harmony export */   "V": () => (/* binding */ renderText),
+/* harmony export */   "W": () => (/* binding */ unclipArea),
+/* harmony export */   "X": () => (/* binding */ toFont),
+/* harmony export */   "Y": () => (/* binding */ _toLeftRightCenter),
+/* harmony export */   "Z": () => (/* binding */ _alignStartEnd),
 /* harmony export */   "_": () => (/* binding */ _arrayUnique),
 /* harmony export */   "a": () => (/* binding */ resolve),
-/* harmony export */   "a0": () => (/* binding */ _capitalize),
-/* harmony export */   "a1": () => (/* binding */ descriptors),
-/* harmony export */   "a2": () => (/* binding */ isFunction),
-/* harmony export */   "a3": () => (/* binding */ _attachContext),
-/* harmony export */   "a4": () => (/* binding */ _createResolver),
-/* harmony export */   "a5": () => (/* binding */ _descriptors),
-/* harmony export */   "a6": () => (/* binding */ mergeIf),
-/* harmony export */   "a7": () => (/* binding */ uid),
-/* harmony export */   "a8": () => (/* binding */ debounce),
-/* harmony export */   "a9": () => (/* binding */ retinaScale),
-/* harmony export */   "aA": () => (/* binding */ niceNum),
-/* harmony export */   "aB": () => (/* binding */ almostWhole),
-/* harmony export */   "aC": () => (/* binding */ almostEquals),
-/* harmony export */   "aD": () => (/* binding */ _decimalPlaces),
-/* harmony export */   "aE": () => (/* binding */ _longestText),
-/* harmony export */   "aF": () => (/* binding */ _filterBetween),
-/* harmony export */   "aG": () => (/* binding */ _lookup),
-/* harmony export */   "aH": () => (/* binding */ getHoverColor),
-/* harmony export */   "aI": () => (/* binding */ clone$1),
-/* harmony export */   "aJ": () => (/* binding */ _merger),
-/* harmony export */   "aK": () => (/* binding */ _mergerIf),
-/* harmony export */   "aL": () => (/* binding */ _deprecated),
-/* harmony export */   "aM": () => (/* binding */ toFontString),
-/* harmony export */   "aN": () => (/* binding */ splineCurve),
-/* harmony export */   "aO": () => (/* binding */ splineCurveMonotone),
-/* harmony export */   "aP": () => (/* binding */ getStyle),
-/* harmony export */   "aQ": () => (/* binding */ fontString),
-/* harmony export */   "aR": () => (/* binding */ toLineHeight),
-/* harmony export */   "aS": () => (/* binding */ PITAU),
-/* harmony export */   "aT": () => (/* binding */ INFINITY),
-/* harmony export */   "aU": () => (/* binding */ RAD_PER_DEG),
-/* harmony export */   "aV": () => (/* binding */ QUARTER_PI),
-/* harmony export */   "aW": () => (/* binding */ TWO_THIRDS_PI),
-/* harmony export */   "aX": () => (/* binding */ _angleDiff),
-/* harmony export */   "aa": () => (/* binding */ clearCanvas),
-/* harmony export */   "ab": () => (/* binding */ setsEqual),
-/* harmony export */   "ac": () => (/* binding */ _elementsEqual),
-/* harmony export */   "ad": () => (/* binding */ getAngleFromPoint),
-/* harmony export */   "ae": () => (/* binding */ _readValueToProps),
-/* harmony export */   "af": () => (/* binding */ _updateBezierControlPoints),
-/* harmony export */   "ag": () => (/* binding */ _computeSegments),
-/* harmony export */   "ah": () => (/* binding */ _boundSegments),
-/* harmony export */   "ai": () => (/* binding */ _steppedInterpolation),
-/* harmony export */   "aj": () => (/* binding */ _bezierInterpolation),
-/* harmony export */   "ak": () => (/* binding */ _pointInLine),
-/* harmony export */   "al": () => (/* binding */ _steppedLineTo),
-/* harmony export */   "am": () => (/* binding */ _bezierCurveTo),
-/* harmony export */   "an": () => (/* binding */ drawPoint),
-/* harmony export */   "ao": () => (/* binding */ addRoundedRectPath),
-/* harmony export */   "ap": () => (/* binding */ toTRBL),
-/* harmony export */   "aq": () => (/* binding */ toTRBLCorners),
-/* harmony export */   "ar": () => (/* binding */ _boundSegment),
-/* harmony export */   "as": () => (/* binding */ _normalizeAngle),
-/* harmony export */   "at": () => (/* binding */ getRtlAdapter),
-/* harmony export */   "au": () => (/* binding */ overrideTextDirection),
-/* harmony export */   "av": () => (/* binding */ _textX),
-/* harmony export */   "aw": () => (/* binding */ restoreTextDirection),
-/* harmony export */   "ax": () => (/* binding */ noop),
-/* harmony export */   "ay": () => (/* binding */ distanceBetweenPoints),
-/* harmony export */   "az": () => (/* binding */ _setMinAndMaxByKey),
+/* harmony export */   "a0": () => (/* binding */ merge),
+/* harmony export */   "a1": () => (/* binding */ _capitalize),
+/* harmony export */   "a2": () => (/* binding */ descriptors),
+/* harmony export */   "a3": () => (/* binding */ isFunction),
+/* harmony export */   "a4": () => (/* binding */ _attachContext),
+/* harmony export */   "a5": () => (/* binding */ _createResolver),
+/* harmony export */   "a6": () => (/* binding */ _descriptors),
+/* harmony export */   "a7": () => (/* binding */ mergeIf),
+/* harmony export */   "a8": () => (/* binding */ uid),
+/* harmony export */   "a9": () => (/* binding */ debounce),
+/* harmony export */   "aA": () => (/* binding */ _setMinAndMaxByKey),
+/* harmony export */   "aB": () => (/* binding */ niceNum),
+/* harmony export */   "aC": () => (/* binding */ almostWhole),
+/* harmony export */   "aD": () => (/* binding */ almostEquals),
+/* harmony export */   "aE": () => (/* binding */ _decimalPlaces),
+/* harmony export */   "aF": () => (/* binding */ _longestText),
+/* harmony export */   "aG": () => (/* binding */ _filterBetween),
+/* harmony export */   "aH": () => (/* binding */ _lookup),
+/* harmony export */   "aI": () => (/* binding */ getHoverColor),
+/* harmony export */   "aJ": () => (/* binding */ clone$1),
+/* harmony export */   "aK": () => (/* binding */ _merger),
+/* harmony export */   "aL": () => (/* binding */ _mergerIf),
+/* harmony export */   "aM": () => (/* binding */ _deprecated),
+/* harmony export */   "aN": () => (/* binding */ toFontString),
+/* harmony export */   "aO": () => (/* binding */ splineCurve),
+/* harmony export */   "aP": () => (/* binding */ splineCurveMonotone),
+/* harmony export */   "aQ": () => (/* binding */ getStyle),
+/* harmony export */   "aR": () => (/* binding */ fontString),
+/* harmony export */   "aS": () => (/* binding */ toLineHeight),
+/* harmony export */   "aT": () => (/* binding */ PITAU),
+/* harmony export */   "aU": () => (/* binding */ INFINITY),
+/* harmony export */   "aV": () => (/* binding */ RAD_PER_DEG),
+/* harmony export */   "aW": () => (/* binding */ QUARTER_PI),
+/* harmony export */   "aX": () => (/* binding */ TWO_THIRDS_PI),
+/* harmony export */   "aY": () => (/* binding */ _angleDiff),
+/* harmony export */   "aa": () => (/* binding */ retinaScale),
+/* harmony export */   "ab": () => (/* binding */ clearCanvas),
+/* harmony export */   "ac": () => (/* binding */ setsEqual),
+/* harmony export */   "ad": () => (/* binding */ _elementsEqual),
+/* harmony export */   "ae": () => (/* binding */ getAngleFromPoint),
+/* harmony export */   "af": () => (/* binding */ _readValueToProps),
+/* harmony export */   "ag": () => (/* binding */ _updateBezierControlPoints),
+/* harmony export */   "ah": () => (/* binding */ _computeSegments),
+/* harmony export */   "ai": () => (/* binding */ _boundSegments),
+/* harmony export */   "aj": () => (/* binding */ _steppedInterpolation),
+/* harmony export */   "ak": () => (/* binding */ _bezierInterpolation),
+/* harmony export */   "al": () => (/* binding */ _pointInLine),
+/* harmony export */   "am": () => (/* binding */ _steppedLineTo),
+/* harmony export */   "an": () => (/* binding */ _bezierCurveTo),
+/* harmony export */   "ao": () => (/* binding */ drawPoint),
+/* harmony export */   "ap": () => (/* binding */ addRoundedRectPath),
+/* harmony export */   "aq": () => (/* binding */ toTRBL),
+/* harmony export */   "ar": () => (/* binding */ toTRBLCorners),
+/* harmony export */   "as": () => (/* binding */ _boundSegment),
+/* harmony export */   "at": () => (/* binding */ _normalizeAngle),
+/* harmony export */   "au": () => (/* binding */ getRtlAdapter),
+/* harmony export */   "av": () => (/* binding */ overrideTextDirection),
+/* harmony export */   "aw": () => (/* binding */ _textX),
+/* harmony export */   "ax": () => (/* binding */ restoreTextDirection),
+/* harmony export */   "ay": () => (/* binding */ noop),
+/* harmony export */   "az": () => (/* binding */ distanceBetweenPoints),
 /* harmony export */   "b": () => (/* binding */ isArray),
 /* harmony export */   "c": () => (/* binding */ color),
 /* harmony export */   "d": () => (/* binding */ defaults),
@@ -10878,7 +11018,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "z": () => (/* binding */ _rlookupByKey)
 /* harmony export */ });
 /*!
- * Chart.js v3.4.1
+ * Chart.js v3.5.0
  * https://www.chartjs.org
  * (c) 2021 Chart.js Contributors
  * Released under the MIT License
@@ -12159,7 +12299,7 @@ function drawPoint(ctx, options, x, y) {
 }
 function _isPointInArea(point, area, margin) {
   margin = margin || 0.5;
-  return point && point.x > area.left - margin && point.x < area.right + margin &&
+  return point && area && point.x > area.left - margin && point.x < area.right + margin &&
 		point.y > area.top - margin && point.y < area.bottom + margin;
 }
 function clipArea(ctx, area) {
@@ -12862,6 +13002,9 @@ function _updateBezierControlPoints(points, options, area, loop, indexAxis) {
   }
 }
 
+function _isDomSupported() {
+  return typeof window !== 'undefined' && typeof document !== 'undefined';
+}
 function _getParentNode(domNode) {
   let parent = domNode.parentNode;
   if (parent && parent.toString() === '[object ShadowRoot]') {
@@ -13287,29 +13430,38 @@ function _computeSegments(line, segmentOptions) {
   const loop = !!line._loop;
   const {start, end} = findStartAndEnd(points, count, loop, spanGaps);
   if (spanGaps === true) {
-    return splitByStyles([{start, end, loop}], points, segmentOptions);
+    return splitByStyles(line, [{start, end, loop}], points, segmentOptions);
   }
   const max = end < start ? end + count : end;
   const completeLoop = !!line._fullLoop && start === 0 && end === count - 1;
-  return splitByStyles(solidSegments(points, start, max, completeLoop), points, segmentOptions);
+  return splitByStyles(line, solidSegments(points, start, max, completeLoop), points, segmentOptions);
 }
-function splitByStyles(segments, points, segmentOptions) {
+function splitByStyles(line, segments, points, segmentOptions) {
   if (!segmentOptions || !segmentOptions.setContext || !points) {
     return segments;
   }
-  return doSplitByStyles(segments, points, segmentOptions);
+  return doSplitByStyles(line, segments, points, segmentOptions);
 }
-function doSplitByStyles(segments, points, segmentOptions) {
+function doSplitByStyles(line, segments, points, segmentOptions) {
+  const baseStyle = readStyle(line.options);
   const count = points.length;
   const result = [];
   let start = segments[0].start;
   let i = start;
   for (const segment of segments) {
-    let prevStyle, style;
+    let prevStyle = baseStyle;
     let prev = points[start % count];
+    let style;
     for (i = start + 1; i <= segment.end; i++) {
       const pt = points[i % count];
-      style = readStyle(segmentOptions.setContext({type: 'segment', p0: prev, p1: pt}));
+      style = readStyle(segmentOptions.setContext({
+        type: 'segment',
+        p0: prev,
+        p1: pt,
+        p0DataIndex: (i - 1) % count,
+        p1DataIndex: i % count,
+        datasetIndex: line._datasetIndex
+      }));
       if (styleChanged(style, prevStyle)) {
         result.push({start: start, end: i - 1, loop: segment.loop, style: prevStyle});
         prevStyle = style;

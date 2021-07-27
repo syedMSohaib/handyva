@@ -2587,6 +2587,16 @@ var BlogCreateComponent = function BlogCreateComponent() {
 
 var BlogShowComponent = function BlogShowComponent() {
   return __webpack_require__.e(/*! import() | admin-blog-show */ "admin-blog-show").then(__webpack_require__.bind(__webpack_require__, /*! ./views/blog/ShowComponent */ "./resources/js/admin/views/blog/ShowComponent.vue"));
+}; // Referrals
+
+
+var ReferralComponent = function ReferralComponent() {
+  return __webpack_require__.e(/*! import() | admin-Referral-index */ "admin-Referral-index").then(__webpack_require__.bind(__webpack_require__, /*! ./views/referral/IndexComponent */ "./resources/js/admin/views/referral/IndexComponent.vue"));
+}; // Chat
+
+
+var ChatComponent = function ChatComponent() {
+  return __webpack_require__.e(/*! import() | admin.chat */ "admin.chat").then(__webpack_require__.bind(__webpack_require__, /*! ./views/chat/ChatComponent */ "./resources/js/admin/views/chat/ChatComponent.vue"));
 };
 
 var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
@@ -2718,6 +2728,22 @@ var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
     component: BlogShowComponent,
     meta: {
       title: "Manage Blog",
+      description: ""
+    }
+  }, {
+    path: '/referral',
+    name: 'referral',
+    component: ReferralComponent,
+    meta: {
+      title: "All referral",
+      description: ""
+    }
+  }, {
+    path: '/chat',
+    name: 'chat',
+    component: ChatComponent,
+    meta: {
+      title: "Chat",
       description: ""
     }
   }, {
@@ -44267,7 +44293,7 @@ var render = function() {
                       "router-link",
                       {
                         staticClass: "ai-icon",
-                        attrs: { to: { name: "client" } }
+                        attrs: { to: { name: "referral" } }
                       },
                       [
                         _c("i", { staticClass: "fi-rr-receipt" }),
@@ -44309,28 +44335,7 @@ var render = function() {
                       "router-link",
                       {
                         staticClass: "ai-icon",
-                        attrs: { to: { name: "client" } }
-                      },
-                      [
-                        _c("i", { staticClass: "fi-rr-receipt" }),
-                        _vm._v(" "),
-                        _c("span", { staticClass: "nav-text" }, [
-                          _vm._v("Reminders")
-                        ])
-                      ]
-                    )
-                  ],
-                  1
-                ),
-                _vm._v(" "),
-                _c(
-                  "li",
-                  [
-                    _c(
-                      "router-link",
-                      {
-                        staticClass: "ai-icon",
-                        attrs: { to: { name: "client" } }
+                        attrs: { to: { name: "chat" } }
                       },
                       [
                         _c("i", { staticClass: "fi-rr-comment" }),

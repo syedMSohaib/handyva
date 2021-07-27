@@ -43,7 +43,7 @@
                             <span class="nav-text">Clients</span>
                         </router-link>
                     </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
+                    <li><router-link class="ai-icon" :to="{ name: 'referral'}">
                             <i class="fi-rr-receipt"></i>
                             <span class="nav-text">Referrals</span>
                         </router-link>
@@ -53,12 +53,12 @@
                             <span class="nav-text">Blogs</span>
                         </router-link>
                     </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
+                    <!-- <li><router-link class="ai-icon" :to="{ name: 'client'}">
                             <i class="fi-rr-receipt"></i>
                             <span class="nav-text">Reminders</span>
                         </router-link>
-                    </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
+                    </li> -->
+                    <li><router-link class="ai-icon" :to="{ name: 'chat'}">
                             <i class="fi-rr-comment"></i>
                             <span class="nav-text">Chatbox Support</span>
                         </router-link>

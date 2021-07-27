@@ -31,7 +31,11 @@ const BlogComponent             = () => import(/* webpackChunkName: "admin-blog-
 const BlogCreateComponent       = () => import(/* webpackChunkName: "admin-blog-create" */ './views/blog/CreateComponent');
 const BlogShowComponent         = () => import(/* webpackChunkName: "admin-blog-show" */ './views/blog/ShowComponent');
 
+// Referrals
+const ReferralComponent         = () => import(/* webpackChunkName: "admin-Referral-index" */ './views/referral/IndexComponent');
 
+// Chat
+const ChatComponent             = () => import(/* webpackChunkName: "admin.chat" */ './views/chat/ChatComponent');
 
 const router = new VueRouter({
     mode: 'history',
@@ -181,6 +185,25 @@ const router = new VueRouter({
                 description: ""
             }
         },
+        {
+            path: '/referral',
+            name: 'referral',
+            component: ReferralComponent,
+            meta: {
+                title: "All referral",
+                description: ""
+            }
+        },
+        {
+            path: '/chat',
+            name: 'chat',
+            component: ChatComponent,
+            meta: {
+                title: "Chat",
+                description: ""
+            }
+        },
+
         {
             path: '*',
             name: 'notfound',

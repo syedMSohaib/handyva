@@ -30,4 +30,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'soachat' => [
+        "appid" => "ba6fbe0ccab8c49d7c986521b3107c31",
+        "appkey" => "cd5e906c77ff5e096fe78815c8496964",
+        "domain" => "dev28.onlinetestingserver.com",
+        "secretkey" => '$2y$10$vfID6RM9zzCiRGjdNhWJ.OvalTMN5BWrwBAprc3O3OyVl9xG7gEDG',
+        "endpoint" => 'http://dev28.onlinetestingserver.com/soachatcentralizedWeb',
+    ]
+
 ];

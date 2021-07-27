@@ -18,5 +18,7 @@
     "/js/admin/admin-chunks/admin-blog-index.js": "/js/admin/admin-chunks/admin-blog-index.js",
     "/js/admin/admin-chunks/admin-blog-show.js": "/js/admin/admin-chunks/admin-blog-show.js",
     "/js/admin/admin-chunks/admin-blog-create.js": "/js/admin/admin-chunks/admin-blog-create.js",
-    "/js/admin/admin-chunks/admin-blog-edit.js": "/js/admin/admin-chunks/admin-blog-edit.js"
+    "/js/admin/admin-chunks/admin-blog-edit.js": "/js/admin/admin-chunks/admin-blog-edit.js",
+    "/js/admin/admin-chunks/admin-Referral-index.js": "/js/admin/admin-chunks/admin-Referral-index.js",
+    "/js/admin/admin-chunks/admin.chat.js": "/js/admin/admin-chunks/admin.chat.js"
 }

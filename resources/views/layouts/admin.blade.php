@@ -37,9 +37,16 @@
             timezones : @json(app('App\Models\Timezone')::all()),
             task_status: @json(app('App\Models\Task')::$status),
         }
+        window.soachat = {
+            appid: "{{config('services.soachat.appid')}}",
+            appkey: "{{config('services.soachat.appkey')}}",
+            domain: "{{config('services.soachat.domain')}}",
+        }
+
     </script>
     <script defer="true" src="{{ asset('js/admin/app.js') }}"></script>
     <script defer="true" src="{{ asset('vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
+    <script defer="true" src="https://dev28.onlinetestingserver.com/soachatcentralizedWeb/js/ocs.js"></script>
 
 </head>
 <body data-typography="poppins" data-theme-version="light" data-layout="vertical" data-nav-headerbg="color_1" data-headerbg="color_1" data-sidebar-style="full" data-sibebarbg="color_1" data-sidebar-position="fixed" data-header-position="fixed" data-container="wide" direction="ltr" data-primary="color_1">

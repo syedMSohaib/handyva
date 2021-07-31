@@ -8,8 +8,8 @@
         "hot": "mix watch --hot",
         "prod": "npm run production",
         "production": "mix --production",
-        "clientdev": "npm run clientdevelopment",
-        "clientprod": "npm run clientproduction"
+        "clientdev": "cross-env NODE_ENV=clientdevelopment mix watch",
+        "clientprod": "cross-env NODE_ENV=clientproduction mix"
     },
     "devDependencies": {
         "axios": "^0.21",

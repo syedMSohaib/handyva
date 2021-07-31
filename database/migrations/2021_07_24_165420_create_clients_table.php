@@ -26,6 +26,18 @@ class CreateClientsTable extends Migration
             $table->integer('remaining_tasks')->default(0);
             $table->longText('image')->nullable();
             $table->rememberToken();
+            $table->timestamp('next_billing_date')->nullable();
+            $table->text("cover")->nullable();
+            $table->longText("about")->nullable();
+            $table->string("availability")->nullable();
+            $table->int("age")->nullable();
+            $table->string("experience")->nullable();
+            $table->longText("skills")->nullable();
+            $table->longText("language")->nullable();
+            $table->text("address")->nullable();
+            $table->string("city")->nullable();
+            $table->string("state")->nullable();
+            $table->string("zipcode")->nullable();
             $table->timestamps();
         });
     }

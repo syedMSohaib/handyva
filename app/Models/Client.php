@@ -6,7 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\HasApiTokens;
 use Webpatser\Uuid\Uuid;
 
 class Client extends Authenticatable
@@ -36,6 +36,18 @@ class Client extends Authenticatable
         "current_plan",
         "remaining_tasks",
         "image",
+        "next_billing_date",
+        "cover",
+        "about",
+        "availability",
+        "age",
+        "experience",
+        "skills",
+        "language",
+        "address",
+        "city",
+        "state",
+        "zipcode"
     ];
 
 
@@ -56,13 +68,19 @@ class Client extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'next_billing_date' => 'datetime',
     ];
 
-    protected $appends = ['name', 'created_date'];
+    protected $appends = ['name', 'created_date', 'billing_date'];
 
     public function getNameAttribute(){
         return "{$this->first_name} {$this->last_name}";
     }
+
+    public function getBillingDateAttribute(){
+        return $this->next_billing_date->format(config('app.date_format'));
+    }
+
 
     public function getCreatedDateAttribute(){
         return $this->created_at->format(config('app.date_format'));
@@ -73,6 +91,13 @@ class Client extends Authenticatable
             ? asset("storage/{$value}")
             : "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={$this->name}";
     }
+
+    public function getCoverAttribute($value){
+        return $value
+            ? asset("storage/{$value}")
+            : asset("cover.png");
+    }
+
 
 
     public function plan(){

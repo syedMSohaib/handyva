@@ -48,6 +48,10 @@ class Task extends Model implements HasMedia
         return $filters->apply($query);
     }
 
+    public function scopeMine($query, $user){
+        $query->where('client_id', $user->id);
+    }
+
     public function getTaskTypeValueAttribute(){
         switch($this->type){
 

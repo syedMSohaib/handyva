@@ -31,6 +31,25 @@ if(process.env.NODE_ENV === "development" || process.env.NODE_ENV === "productio
         });
 }
 
+if(process.env.NODE_ENV === "clientdevelopment" || process.env.NODE_ENV === "clientproduction"){
+    mix.js('resources/js/client/app.js', 'public/js/client/')
+        .vue()
+        .sass('resources/sass/client/app.scss', 'public/css/client/')
+        .webpackConfig({
+            plugins: [
+                new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+            ],
+            output: {
+                publicPath: `${process.env.MIX_BASE_URL}/`,
+                chunkFilename: `js/client/client-chunks/[name].js`,
+            }
+        })
+        .options({
+            processCssUrls: false
+        });
+}
+
+
 // mix.js('resources/js/admin/app.js', 'public/js/admin')
 //     // .vue()
 //     .sass('resources/sass/admin/app.scss', 'public/css/admin/app.css');

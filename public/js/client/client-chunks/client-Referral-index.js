@@ -218,6 +218,26 @@ var render = function() {
     _c("div", { staticClass: "row" }, [
       _c("div", { staticClass: "col-12" }, [
         _c("div", { staticClass: "card" }, [
+          _c(
+            "div",
+            { staticClass: "card-header" },
+            [
+              _c(
+                "router-link",
+                {
+                  staticClass: "mt-2",
+                  attrs: { to: { name: "referral.create" } }
+                },
+                [
+                  _c("h4", { staticClass: "card-title" }, [
+                    _vm._v("Create Referral")
+                  ])
+                ]
+              )
+            ],
+            1
+          ),
+          _vm._v(" "),
           _c("div", { staticClass: "card-body" }, [
             _c("div", { staticClass: "table-responsive" }, [
               _c(
@@ -237,17 +257,6 @@ var render = function() {
                         _c("td", [_vm._v(_vm._s(ref.id))]),
                         _vm._v(" "),
                         _c("td", [_vm._v(_vm._s(ref.created_date))]),
-                        _vm._v(" "),
-                        _c("td", [_vm._v(_vm._s(ref.client.name))]),
-                        _vm._v(" "),
-                        _c("td", [
-                          _vm._v(
-                            _vm._s(ref.client.plan.title) +
-                              " [" +
-                              _vm._s(ref.client.plan.no_of_task) +
-                              " Tasks]"
-                          )
-                        ]),
                         _vm._v(" "),
                         _c("td", [_vm._v(_vm._s(ref.referral_code))]),
                         _vm._v(" "),
@@ -324,10 +333,6 @@ var staticRenderFns = [
         _c("th", [_vm._v("ID")]),
         _vm._v(" "),
         _c("th", [_vm._v("Created at")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Client Name")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("Client Current Plan")]),
         _vm._v(" "),
         _c("th", [_vm._v("Referral Code")]),
         _vm._v(" "),

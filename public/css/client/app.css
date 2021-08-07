@@ -90193,7 +90193,7 @@ p.handy-p {
   margin-top: 20px;
 }
 
-button.btn.btn-handy-task {
+button.btn.btn-handy-task, a.btn-handy-task {
   background: #2ecc71;
   color: #fff;
   margin-right: 20px;
@@ -90332,4 +90332,15 @@ span.select2-selection.select2-selection--single {
 
 .nav-header, .deznav {
   background: aliceblue;
+}
+
+.heading-badge {
+  background: #70c164;
+  display: table;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.bg-secondary {
+  background-color: #818285 !important;
 }

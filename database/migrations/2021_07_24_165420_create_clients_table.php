@@ -38,7 +38,18 @@ class CreateClientsTable extends Migration
             $table->string("city")->nullable();
             $table->string("state")->nullable();
             $table->string("zipcode")->nullable();
+            $table->string("stripe_customer_id")->nullable();
+            $table->date("dob")->nullable();
+            $table->string("gender", 10)->nullable();
+            $table->string("homephone")->nullable();
+            $table->string("cellphone")->nullable();
+            $table->string("skype")->nullable();
+            $table->text("work_address")->nullable();
+            $table->text("mailing_address")->nullable();
+            $table->text("temp_address")->nullable();
             $table->timestamps();
+
+
         });
     }
 

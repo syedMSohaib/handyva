@@ -30,6 +30,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'stripe' => [
+        'pk' => "pk_test_b8qmpGr3IZYARJcwgfWNKevX00zxOc9EbZ",
+        "sk" => "sk_test_06fdX4tw6DRPfRVWc4I5F7Do0095EoThGH"
+    ],
+
     'soachat' => [
         "appid" => "ba6fbe0ccab8c49d7c986521b3107c31",
         "appkey" => "cd5e906c77ff5e096fe78815c8496964",

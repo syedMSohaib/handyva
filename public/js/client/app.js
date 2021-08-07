@@ -1865,6 +1865,11 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  data: function data() {
+    return {
+      show: false
+    };
+  },
   mounted: function mounted() {}
 });
 
@@ -2292,6 +2297,18 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   components: {
@@ -2566,11 +2583,18 @@ vue__WEBPACK_IMPORTED_MODULE_11__.default.mixin({
     dateFormat: function dateFormat(date) {
       return date ? date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, 0) + '-' + date.getDate().toString().padStart(2, 0) : '';
     },
+    UTCdateFormat: function UTCdateFormat(date) {
+      return date ? date.getFullYear() + '-' + (date.getMonth() + 1).toString().padStart(2, 0) + '-' + date.getUTCDate().toString().padStart(2, 0) : '';
+    },
     dateFormatLaravel: function dateFormatLaravel(date) {
       var split = date.split('T');
       var time = split[1].split('.')[0];
       var d = "".concat(split[0], " ").concat(time);
       return new Date(d).toLocaleString();
+    },
+    humanDate: function humanDate(epoch) {
+      var myDate = new Date(Number(epoch) * 1000);
+      return myDate.toGMTString() + " " + myDate.toLocaleString();
     },
     buildqueryparams: function buildqueryparams(params) {
       return new URLSearchParams(params).toString();
@@ -2630,11 +2654,19 @@ var AllNotificationComponent = function AllNotificationComponent() {
 
 
 var ProfileComponent = function ProfileComponent() {
-  return __webpack_require__.e(/*! import() | client-profile-view */ "client-profile-view").then(__webpack_require__.bind(__webpack_require__, /*! ./views/dashboard/ProfileComponent */ "./resources/js/client/views/dashboard/ProfileComponent.vue"));
+  return __webpack_require__.e(/*! import() | client-profile-view */ "client-profile-view").then(__webpack_require__.bind(__webpack_require__, /*! ./views/profile/ProfileComponent */ "./resources/js/client/views/profile/ProfileComponent.vue"));
 };
 
-var EditProfileComponent = function EditProfileComponent() {
-  return __webpack_require__.e(/*! import() | client-profile-edit */ "client-profile-edit").then(__webpack_require__.bind(__webpack_require__, /*! ./views/dashboard/EditProfileComponent */ "./resources/js/client/views/dashboard/EditProfileComponent.vue"));
+var SocialLifeComponent = function SocialLifeComponent() {
+  return __webpack_require__.e(/*! import() | client-profile-social_life */ "client-profile-social_life").then(__webpack_require__.bind(__webpack_require__, /*! ./views/profile/SocialLifeComponent */ "./resources/js/client/views/profile/SocialLifeComponent.vue"));
+};
+
+var TravelComponent = function TravelComponent() {
+  return __webpack_require__.e(/*! import() | client-profile-contacts */ "client-profile-contacts").then(__webpack_require__.bind(__webpack_require__, /*! ./views/profile/TravelComponent */ "./resources/js/client/views/profile/TravelComponent.vue"));
+};
+
+var ContactComponent = function ContactComponent() {
+  return __webpack_require__.e(/*! import() | client-profile-travels */ "client-profile-travels").then(__webpack_require__.bind(__webpack_require__, /*! ./views/profile/ContactComponent */ "./resources/js/client/views/profile/ContactComponent.vue"));
 }; // Task
 
 
@@ -2652,6 +2684,10 @@ var TaskShowComponent = function TaskShowComponent() {
 
 var TaskLogComponent = function TaskLogComponent() {
   return __webpack_require__.e(/*! import() | client-task-log */ "client-task-log").then(__webpack_require__.bind(__webpack_require__, /*! ./views/task/LogComponent */ "./resources/js/client/views/task/LogComponent.vue"));
+};
+
+var TaskEditComponent = function TaskEditComponent() {
+  return __webpack_require__.e(/*! import() | client-task-edit */ "client-task-edit").then(__webpack_require__.bind(__webpack_require__, /*! ./views/task/EditComponent */ "./resources/js/client/views/task/EditComponent.vue"));
 }; // Employee
 
 
@@ -2700,11 +2736,25 @@ var BlogShowComponent = function BlogShowComponent() {
 
 var ReferralComponent = function ReferralComponent() {
   return __webpack_require__.e(/*! import() | client-Referral-index */ "client-Referral-index").then(__webpack_require__.bind(__webpack_require__, /*! ./views/referral/IndexComponent */ "./resources/js/client/views/referral/IndexComponent.vue"));
+};
+
+var ReferralCreateComponent = function ReferralCreateComponent() {
+  return __webpack_require__.e(/*! import() | client-Referral-create */ "client-Referral-create").then(__webpack_require__.bind(__webpack_require__, /*! ./views/referral/CreateComponent */ "./resources/js/client/views/referral/CreateComponent.vue"));
 }; // Chat
 
 
 var ChatComponent = function ChatComponent() {
-  return __webpack_require__.e(/*! import() | admin.chat */ "admin.chat").then(__webpack_require__.bind(__webpack_require__, /*! ./views/chat/ChatComponent */ "./resources/js/client/views/chat/ChatComponent.vue"));
+  return __webpack_require__.e(/*! import() | client.chat */ "client.chat").then(__webpack_require__.bind(__webpack_require__, /*! ./views/chat/ChatComponent */ "./resources/js/client/views/chat/ChatComponent.vue"));
+}; //reminders
+
+
+var ReminderComponent = function ReminderComponent() {
+  return __webpack_require__.e(/*! import() | client.reminder */ "client.reminder").then(__webpack_require__.bind(__webpack_require__, /*! ./views/reminder/IndexComponent */ "./resources/js/client/views/reminder/IndexComponent.vue"));
+}; //faqs
+
+
+var FaqComponent = function FaqComponent() {
+  return __webpack_require__.e(/*! import() | client.reminder */ "client.reminder").then(__webpack_require__.bind(__webpack_require__, /*! ./views/faq/IndexComponent */ "./resources/js/client/views/faq/IndexComponent.vue"));
 };
 
 var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
@@ -2735,6 +2785,30 @@ var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
       description: ""
     }
   }, {
+    path: '/profile/social-life',
+    name: 'profile.social_life',
+    component: SocialLifeComponent,
+    meta: {
+      title: "Social Life",
+      description: ""
+    }
+  }, {
+    path: '/profile/travels',
+    name: 'profile.travels',
+    component: TravelComponent,
+    meta: {
+      title: "My Travels",
+      description: ""
+    }
+  }, {
+    path: '/profile/contacts',
+    name: 'profile.contacts',
+    component: ContactComponent,
+    meta: {
+      title: "My Contacts",
+      description: ""
+    }
+  }, {
     path: '/task',
     name: 'task',
     component: TaskComponent,
@@ -2756,6 +2830,14 @@ var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
     component: TaskShowComponent,
     meta: {
       title: "Task - Detail",
+      description: ""
+    }
+  }, {
+    path: '/task/:id/edit',
+    name: 'task.edit',
+    component: TaskEditComponent,
+    meta: {
+      title: "Task - Edit",
       description: ""
     }
   }, {
@@ -2823,6 +2905,14 @@ var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
       description: ""
     }
   }, {
+    path: '/reminders',
+    name: 'reminders',
+    component: ReminderComponent,
+    meta: {
+      title: "My Reminders",
+      description: ""
+    }
+  }, {
     path: '/blog',
     name: 'blog',
     component: BlogComponent,
@@ -2855,11 +2945,27 @@ var router = new vue_router__WEBPACK_IMPORTED_MODULE_1__.default({
       description: ""
     }
   }, {
+    path: '/referral/create',
+    name: 'referral.create',
+    component: ReferralCreateComponent,
+    meta: {
+      title: "Create Referral",
+      description: ""
+    }
+  }, {
     path: '/chat',
     name: 'chat',
     component: ChatComponent,
     meta: {
       title: "Chat",
+      description: ""
+    }
+  }, {
+    path: '/faq',
+    name: 'faqs',
+    component: FaqComponent,
+    meta: {
+      title: "FAQs",
       description: ""
     }
   }, {
@@ -7466,7 +7572,7 @@ __webpack_require__.r(__webpack_exports__);
 
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_0___default()(function(i){return i[1]});
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "\n.ps {\n    height: 400px;\n}\n\n", ""]);
+___CSS_LOADER_EXPORT___.push([module.id, "\n.ps {\n    height: 350px;\n}\n\n", ""]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -43227,6 +43333,10 @@ var render = function() {
   var _c = _vm._self._c || _h
   return _c(
     "div",
+    {
+      class: "show " + (_vm.show ? "menu-toggle" : ""),
+      attrs: { id: "wrappper" }
+    },
     [
       _c("div", { staticClass: "nav-header" }, [
         _c(
@@ -43241,7 +43351,24 @@ var render = function() {
           1
         ),
         _vm._v(" "),
-        _vm._m(0)
+        _c("div", { staticClass: "nav-control" }, [
+          _c(
+            "div",
+            {
+              class: "hamburger " + (_vm.show ? "is-active" : ""),
+              on: {
+                click: function($event) {
+                  _vm.show = !_vm.show
+                }
+              }
+            },
+            [
+              _c("span", { staticClass: "line" }),
+              _c("span", { staticClass: "line" }),
+              _c("span", { staticClass: "line" })
+            ]
+          )
+        ])
       ]),
       _vm._v(" "),
       _c("top-header"),
@@ -43253,20 +43380,7 @@ var render = function() {
     1
   )
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "nav-control" }, [
-      _c("div", { staticClass: "hamburger" }, [
-        _c("span", { staticClass: "line" }),
-        _c("span", { staticClass: "line" }),
-        _c("span", { staticClass: "line" })
-      ])
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 
 
@@ -43466,7 +43580,7 @@ var render = function() {
                       _c("div", { staticClass: "header-info" }, [
                         _c("span", [_vm._v(_vm._s(_vm.user.name))]),
                         _vm._v(" "),
-                        _c("small", [_vm._v("Super Admin")])
+                        _c("small", [_vm._v("Client Panel")])
                       ])
                     ]
                   ),
@@ -44061,195 +44175,231 @@ var render = function() {
             ),
             _vm._v(" "),
             _c("PerfectScrollbar", { ref: "scrollbar" }, [
-              _c("ul", { staticClass: "metismenu", attrs: { id: "menu" } }, [
-                _c(
-                  "li",
-                  { staticClass: "mm-active" },
-                  [
-                    _c(
-                      "router-link",
-                      {
-                        staticClass: "ai-icon",
-                        attrs: { to: { name: "home" } }
-                      },
-                      [
-                        _c("i", { staticClass: "flaticon-144-layout" }),
-                        _vm._v(" "),
-                        _c("span", { staticClass: "nav-text" }, [
-                          _vm._v("Dashboard")
-                        ])
-                      ]
-                    )
-                  ],
-                  1
-                ),
-                _vm._v(" "),
-                _c("li", [
+              _c(
+                "ul",
+                {
+                  staticClass: "metismenu",
+                  staticStyle: { "margin-bottom": "20%" },
+                  attrs: { id: "menu" }
+                },
+                [
                   _c(
-                    "a",
-                    {
-                      staticClass: "has-arrow ai-icon",
-                      attrs: {
-                        href: "javascript:void()",
-                        "aria-expanded": "false"
-                      }
-                    },
+                    "li",
+                    { staticClass: "mm-active" },
                     [
-                      _c("i", { staticClass: "flaticon-077-menu-1" }),
-                      _vm._v(" "),
-                      _c("span", { staticClass: "nav-text" }, [_vm._v("Tasks")])
-                    ]
+                      _c(
+                        "router-link",
+                        {
+                          staticClass: "ai-icon",
+                          attrs: { to: { name: "home" } }
+                        },
+                        [
+                          _c("i", { staticClass: "flaticon-144-layout" }),
+                          _vm._v(" "),
+                          _c("span", { staticClass: "nav-text" }, [
+                            _vm._v("Dashboard")
+                          ])
+                        ]
+                      )
+                    ],
+                    1
                   ),
                   _vm._v(" "),
-                  _c("ul", { attrs: { "aria-expanded": "false" } }, [
+                  _c("li", [
                     _c(
-                      "li",
-                      [
-                        _c("router-link", { attrs: { to: { name: "task" } } }, [
-                          _vm._v("All Tasks")
-                        ])
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { status: 1 } }
-                            }
-                          },
-                          [_vm._v("Active Tasks")]
-                        )
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { status: 0 } }
-                            }
-                          },
-                          [_vm._v("Pending Tasks")]
-                        )
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { excess: 1 } }
-                            }
-                          },
-                          [_vm._v("Excess Tasks")]
-                        )
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { status: 2 } }
-                            }
-                          },
-                          [_vm._v("WIP Tasks")]
-                        )
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { extensive: 1 } }
-                            }
-                          },
-                          [_vm._v("Extensive Tasks")]
-                        )
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { recurring: 1 } }
-                            }
-                          },
-                          [_vm._v("Recurring Tasks")]
-                        )
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { status: 3 } }
-                            }
-                          },
-                          [_vm._v("Completed Tasks")]
-                        )
-                      ],
-                      1
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "li",
-                      [
-                        _c(
-                          "router-link",
-                          {
-                            attrs: {
-                              to: { name: "task", query: { status: 4 } }
-                            }
-                          },
-                          [_vm._v("Cancelled Tasks")]
-                        )
-                      ],
-                      1
-                    )
-                  ])
-                ]),
-                _vm._v(" "),
-                _c(
-                  "li",
-                  [
-                    _c(
-                      "router-link",
+                      "a",
                       {
-                        staticClass: "ai-icon",
-                        attrs: { to: { name: "profile" } }
+                        staticClass: "has-arrow ai-icon",
+                        attrs: {
+                          href: "javascript:void()",
+                          "aria-expanded": "false"
+                        }
+                      },
+                      [
+                        _c("i", { staticClass: "flaticon-077-menu-1" }),
+                        _vm._v(" "),
+                        _c("span", { staticClass: "nav-text" }, [
+                          _vm._v("Tasks")
+                        ])
+                      ]
+                    ),
+                    _vm._v(" "),
+                    _c("ul", { attrs: { "aria-expanded": "false" } }, [
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            { attrs: { to: { name: "task" } } },
+                            [_vm._v("All Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "Active Tasks", status: 1 }
+                                }
+                              }
+                            },
+                            [_vm._v("Active Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "Pending Tasks", status: 0 }
+                                }
+                              }
+                            },
+                            [_vm._v("Pending Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "Excess Tasks", excess: 1 }
+                                }
+                              }
+                            },
+                            [_vm._v("Excess Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "WIP Tasks", status: 2 }
+                                }
+                              }
+                            },
+                            [_vm._v("WIP Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "Extensive Tasks", extensive: 1 }
+                                }
+                              }
+                            },
+                            [_vm._v("Extensive Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "Recurring Tasks", recurring: 1 }
+                                }
+                              }
+                            },
+                            [_vm._v("Recurring Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "Completed Tasks", status: 3 }
+                                }
+                              }
+                            },
+                            [_vm._v("Completed Tasks")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            {
+                              attrs: {
+                                to: {
+                                  name: "task",
+                                  query: { qt: "Cancelled Tasks", status: 4 }
+                                }
+                              }
+                            },
+                            [_vm._v("Cancelled Tasks")]
+                          )
+                        ],
+                        1
+                      )
+                    ])
+                  ]),
+                  _vm._v(" "),
+                  _c("li", [
+                    _c(
+                      "a",
+                      {
+                        staticClass: "has-arrow ai-icon",
+                        attrs: {
+                          href: "javascript:void()",
+                          "aria-expanded": "false"
+                        }
                       },
                       [
                         _c("i", { staticClass: "fi-rr-user" }),
@@ -44258,74 +44408,144 @@ var render = function() {
                           _vm._v("Profile")
                         ])
                       ]
-                    )
-                  ],
-                  1
-                ),
-                _vm._v(" "),
-                _c(
-                  "li",
-                  [
-                    _c(
-                      "router-link",
-                      {
-                        staticClass: "ai-icon",
-                        attrs: { to: { name: "referral" } }
-                      },
-                      [
-                        _c("i", { staticClass: "fi-rr-receipt" }),
-                        _vm._v(" "),
-                        _c("span", { staticClass: "nav-text" }, [
-                          _vm._v("Referrals")
-                        ])
-                      ]
-                    )
-                  ],
-                  1
-                ),
-                _vm._v(" "),
-                _c(
-                  "li",
-                  [
-                    _c(
-                      "router-link",
-                      {
-                        staticClass: "ai-icon",
-                        attrs: { to: { name: "profile" } }
-                      },
-                      [
-                        _c("i", { staticClass: "fi-rr-receipt" }),
-                        _vm._v(" "),
-                        _c("span", { staticClass: "nav-text" }, [
-                          _vm._v("Reminders")
-                        ])
-                      ]
-                    )
-                  ],
-                  1
-                ),
-                _vm._v(" "),
-                _c(
-                  "li",
-                  [
-                    _c(
-                      "router-link",
-                      {
-                        staticClass: "ai-icon",
-                        attrs: { to: { name: "chat" } }
-                      },
-                      [
-                        _c("i", { staticClass: "fi-rr-comment" }),
-                        _vm._v(" "),
-                        _c("span", { staticClass: "nav-text" }, [
-                          _vm._v("Chatbox Support")
-                        ])
-                      ]
-                    )
-                  ],
-                  1
-                )
-              ])
+                    ),
+                    _vm._v(" "),
+                    _c("ul", { attrs: { "aria-expanded": "false" } }, [
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            { attrs: { to: { name: "profile" } } },
+                            [_vm._v("Profile")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            { attrs: { to: { name: "profile.social_life" } } },
+                            [_vm._v("Social Life")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            { attrs: { to: { name: "profile.contacts" } } },
+                            [_vm._v("Contacts")]
+                          )
+                        ],
+                        1
+                      ),
+                      _vm._v(" "),
+                      _c(
+                        "li",
+                        [
+                          _c(
+                            "router-link",
+                            { attrs: { to: { name: "profile.travels" } } },
+                            [_vm._v("Travels")]
+                          )
+                        ],
+                        1
+                      )
+                    ])
+                  ]),
+                  _vm._v(" "),
+                  _c(
+                    "li",
+                    [
+                      _c(
+                        "router-link",
+                        {
+                          staticClass: "ai-icon",
+                          attrs: { to: { name: "referral" } }
+                        },
+                        [
+                          _c("i", { staticClass: "fi-rr-receipt" }),
+                          _vm._v(" "),
+                          _c("span", { staticClass: "nav-text" }, [
+                            _vm._v("Referrals")
+                          ])
+                        ]
+                      )
+                    ],
+                    1
+                  ),
+                  _vm._v(" "),
+                  _c(
+                    "li",
+                    [
+                      _c(
+                        "router-link",
+                        {
+                          staticClass: "ai-icon",
+                          attrs: { to: { name: "reminders" } }
+                        },
+                        [
+                          _c("i", { staticClass: "fi-rr-receipt" }),
+                          _vm._v(" "),
+                          _c("span", { staticClass: "nav-text" }, [
+                            _vm._v("Reminders")
+                          ])
+                        ]
+                      )
+                    ],
+                    1
+                  ),
+                  _vm._v(" "),
+                  _c(
+                    "li",
+                    [
+                      _c(
+                        "router-link",
+                        {
+                          staticClass: "ai-icon",
+                          attrs: { to: { name: "chat" } }
+                        },
+                        [
+                          _c("i", { staticClass: "fi-rr-comment" }),
+                          _vm._v(" "),
+                          _c("span", { staticClass: "nav-text" }, [
+                            _vm._v("Chatbox Support")
+                          ])
+                        ]
+                      )
+                    ],
+                    1
+                  ),
+                  _vm._v(" "),
+                  _c(
+                    "li",
+                    [
+                      _c(
+                        "router-link",
+                        {
+                          staticClass: "ai-icon",
+                          attrs: { to: { name: "faqs" } }
+                        },
+                        [
+                          _c("i", { staticClass: "fi-rr-comment" }),
+                          _vm._v(" "),
+                          _c("span", { staticClass: "nav-text" }, [
+                            _vm._v("FAQs")
+                          ])
+                        ]
+                      )
+                    ],
+                    1
+                  )
+                ]
+              )
             ])
           ],
           1

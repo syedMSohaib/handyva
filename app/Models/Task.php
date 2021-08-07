@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -15,8 +16,10 @@ class Task extends Model implements HasMedia
     protected $fillable = [
         "client_id", "plan_id", "title", "description", "type", "date", "time", "timezone",
         "is_repeat", "repeat_type", "end_type", "end_after","status", "end_at", "cancellation_reason",
-        "occurrence", "repeat_every", "repeat_on", "user_id"
+        "occurrence", "repeat_every", "repeat_on", "user_id", 'is_extensive', 'is_excess'
     ];
+
+
 
     protected $casts = [
         'repeat_on' => 'json',
@@ -37,7 +40,48 @@ class Task extends Model implements HasMedia
         'CANCEL' => 4,
     ];
 
-    protected $appends = ['task_type_value', 'created_date', 'status_value'];
+    protected $appends = ['toggle', 'mini', 'task_type_value', 'created_date', 'status_value', 'color'];
+
+    public function getToggleAttribute(){
+        return false;
+    }
+
+    public function getMiniAttribute(){
+        return substr($this->description, 0, 200);
+    }
+
+    public function getColorAttribute(){
+        $timediff = Carbon::now()->diffInHours($this->created_at, false);
+
+        if($this->type == 0) {
+            if($timediff > 2 && $this->status == 0)
+                return "#6e6e6e";
+            else
+                return "#6e6e6e8c";
+        }
+
+        if($this->type == 1) {
+            if($timediff > 2 && $this->status == 0)
+                return "#70c164";
+            else
+                return "#70c164a8";
+        }
+
+        if($this->type == 2) {
+            if($timediff > 2 && $this->status == 0)
+                return "#f44336";
+            else
+                return "#f44336b0";
+        }
+
+
+        if($this->type == 3) {
+            if($timediff > 2 && $this->status == 0)
+                return "#ffc107";
+            else
+                return "#ffc10778";
+        }
+    }
 
     public function getCreatedDateAttribute(){
         return $this->created_at->format(config('app.date_format'));
@@ -90,6 +134,14 @@ class Task extends Model implements HasMedia
 
     public function logs(){
         return $this->morphMany(\Spatie\Activitylog\Models\Activity::class, 'subject');
+    }
+
+    public function notes(){
+        return $this->hasMany(TaskNote::class, 'task_id');
+    }
+
+    public function addNote($data){
+        $this->notes()->save(new TaskNote($data));
     }
 
 }

@@ -39,11 +39,18 @@ Vue.mixin({
         dateFormat(date){
             return (date) ? date.getFullYear() + '-' + ((date.getMonth() +1).toString().padStart(2, 0)) + '-' + (date.getDate().toString().padStart(2, 0)) : '';
         },
+        UTCdateFormat(date){
+            return (date) ? date.getFullYear() + '-' + ((date.getMonth() +1).toString().padStart(2, 0)) + '-' + (date.getUTCDate().toString().padStart(2, 0)) : '';
+        },
         dateFormatLaravel(date){
             let split = date.split('T');
             let time = split[1].split('.')[0];
             let d = `${split[0]} ${time}`;
             return new Date(d).toLocaleString();
+        },
+        humanDate(epoch){
+            var myDate = new Date(Number(epoch)*1000);
+            return myDate.toGMTString()+" "+myDate.toLocaleString();
         },
         buildqueryparams(params){
             return (new URLSearchParams(params)).toString()

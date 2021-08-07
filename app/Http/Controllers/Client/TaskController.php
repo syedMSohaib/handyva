@@ -8,8 +8,9 @@ use App\Http\Requests\ClientTaskRequest;
 use App\Http\Requests\TaskRequest;
 use App\Models\Client;
 use App\Models\Task;
+use App\Models\TaskNote;
 use App\Models\User;
-
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
@@ -22,7 +23,7 @@ class TaskController extends Controller
      * @return void
      */
     public function index(Request $request, TaskFilter $filters){
-        return Task::mine($request->user())->with('client')->filter($filters)->get();
+        return Task::mine($request->user())->with('client')->filter($filters)->latest()->get();
     }
 
 
@@ -37,6 +38,7 @@ class TaskController extends Controller
         $task->load('client');
         $task->load('logs');
         $task->load('media');
+        $task->load("notes");
         return $task;
     }
 
@@ -50,11 +52,16 @@ class TaskController extends Controller
     public function store(ClientTaskRequest $request){
 
         $client = $request->user();
+
+        if($client->remaining_tasks == 0) $this->responseWithError(["task" => "Your task credit limit is reached, upgrade a package or buy task credits"]);
+
         $data = collect($request->all())->toArray();
         $data['plan_id'] = $client->current_plan;
         $data['time'] = $this->formatTime($data);
-        // $data['repeat_on'] = collect($data['repeat_on'])->join(',');
-        // dd($data);
+
+        if(Task::mine($request->user())->whereDate('created_at', Carbon::now())->count() >= config('app.task_limit_per_day'))
+            $data['is_excess'] = 1;
+
         $task = $client->task()->save(new Task($data));
 
         $client->decrement('remaining_tasks');
@@ -98,8 +105,6 @@ class TaskController extends Controller
 
     public function updateStatus(Request $request, Task $task){
 
-        $task->status = $request->status;
-        $task->save();
         switch($request->status){
 
             case Task::$status['PENDING']:
@@ -116,8 +121,15 @@ class TaskController extends Controller
                 break;
             case Task::$status['CANCEL']:
                 $status = "CANCEL";
+                $request->validate(['reason' => "required"]);
+                (Client::find($task->client_id))->increment('remaining_tasks');
                 break;
+
         }
+
+        $task->status = $request->status;
+        $task->cancellation_reason = $request->reason ?? null;
+        $task->save();
 
         activity()
         ->causedBy($request->user())
@@ -143,4 +155,38 @@ class TaskController extends Controller
         return $this->responseSuccess("The task resource is assigned successfully", $task);
 
     }
+
+    public function addNote(Request $request, Task $task){
+        $request->validate([
+            'task_id' => "required",
+            "note" => "required",
+        ]);
+
+        $data = $request->all();
+        $data['user_id'] = $request->user()->id;
+        $data['user_type'] = get_class($request->user());
+        $task->addNote($data);
+
+        activity()
+        ->causedBy($request->user())
+        ->performedOn($task)
+        ->log("{$request->user()->name} add internal note to task - {$task->title}");
+
+        return $this->responseSuccess("The internal note is added successfully");
+
+    }
+
+    public function deleteNote(TaskNote $note){
+        $note->delete();
+        return $this->responseSuccess("The internal note is deleted successfully");
+    }
+
+    public function makeextensiveTask(Request $request, Task $task){
+        $value = 1 - $task->is_extensive;
+        $task->is_extensive = $value;
+        $task->save();
+        return $this->responseSuccess("The task is updated successfully");
+    }
+
+
 }

@@ -17,6 +17,7 @@
         "laravel/ui": "^3.3",
         "spatie/laravel-activitylog": "^3.17",
         "spatie/laravel-medialibrary": "^9.6",
+        "stripe/stripe-php": "^7.92",
         "webpatser/laravel-uuid": "^4.0",
         "zgabievi/promocodes": "^8.1"
     },

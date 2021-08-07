@@ -206,36 +206,6 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
 //
 //
 //
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   data: function data() {
     return {
@@ -247,6 +217,8 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
       hours: _toConsumableArray(Array(24).keys()),
       minutes: _toConsumableArray(Array(60).keys()),
       clients: [],
+      reason: '',
+      note: '',
       baseUrl: window.axios.defaults.baseURL
     };
   },
@@ -256,68 +228,112 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
     this.getUser();
   },
   methods: {
-    changeStatus: function changeStatus(id) {
+    makeTaskExtensive: function makeTaskExtensive() {
       var _this = this;
 
-      axios.post("/task/".concat(this.$route.params.id, "/update-status"), {
-        status: this.task.status
-      }).then(function (_ref) {
+      axios.get("/task/".concat(this.$route.params.id, "/extensive-task")).then(function (_ref) {
         var data = _ref.data;
 
+        _this.$toastr.success(data.message, 'Success', {});
+
         _this.getTask();
+      })["catch"](function (e) {
+        console.log(e);
+        var errors = e.response.data.errors;
+        Object.keys(errors).forEach(function (key) {
+          _this.$toastr.error(errors[key], "Error!");
+        });
       });
     },
-    assignResource: function assignResource(id) {
+    deleteNote: function deleteNote(id) {
       var _this2 = this;
 
-      if (!this.task.user_id) {
-        this.$toastr.error("Please select resource to assign", "Error!");
-        return;
-      }
+      this.$dialog.confirm("Are you sure you want to this internal note ? The Action is irreversible").then(function (dialog) {
+        axios["delete"]("/task/".concat(id, "/delete-note")).then(function (d) {
+          _this2.getTask();
 
-      axios.post("/task/".concat(this.$route.params.id, "/assign-resource"), {
-        user_id: this.task.user_id
+          _this2.$toastr.success(d.data.message, 'Success', {});
+
+          dialog.close();
+        })["catch"](function (d) {});
+      });
+    },
+    changeStatus: function changeStatus(id) {
+      var _this3 = this;
+
+      axios.post("/task/".concat(this.$route.params.id, "/update-status"), {
+        status: 4,
+        reason: this.reason
       }).then(function (_ref2) {
         var data = _ref2.data;
+        $("#reason").modal('hide');
 
-        _this2.getTask();
+        _this3.$toastr.success(d.data.message, 'Success', {});
+
+        _this3.getTask();
+      })["catch"](function (e) {
+        console.log(e);
+        var errors = e.response.data.errors;
+        Object.keys(errors).forEach(function (key) {
+          _this3.$toastr.error(errors[key], "Error!");
+        });
+      });
+    },
+    addNote: function addNote() {
+      var _this4 = this;
+
+      axios.post("/task/".concat(this.$route.params.id, "/add-note"), {
+        user_id: this.task.user_id,
+        note: this.note,
+        task_id: this.$route.params.id
+      }).then(function (_ref3) {
+        var data = _ref3.data;
+        _this4.note = "";
+
+        _this4.getTask();
+      })["catch"](function (e) {
+        console.log(e);
+        var errors = e.response.data.errors;
+        Object.keys(errors).forEach(function (key) {
+          _this4.$toastr.error(errors[key], "Error!");
+        });
       });
     },
     getUser: function getUser() {
-      var _this3 = this;
+      var _this5 = this;
 
-      axios.get("/user").then(function (_ref3) {
-        var data = _ref3.data;
-        _this3.users = data;
+      axios.get("/user").then(function (_ref4) {
+        var data = _ref4.data;
+        _this5.users = data;
       });
     },
     getTask: function getTask() {
-      var _this4 = this;
+      var _this6 = this;
 
-      axios.get("/task/".concat(this.$route.params.id)).then(function (_ref4) {
-        var data = _ref4.data;
-        _this4.task = data;
+      axios.get("/task/".concat(this.$route.params.id)).then(function (_ref5) {
+        var data = _ref5.data;
+        _this6.task = data;
       });
     },
     store: function store() {
-      var _this5 = this;
+      var _this7 = this;
 
       if (this.$refs.myVueDropzone.getAcceptedFiles().length == 0) {
         this.$toastr.error("Please attach document to proceed", "Error!");
         return;
       }
 
-      axios.post('task', this.task).then(function (_ref5) {
-        var data = _ref5.data;
-        _this5.$refs.myVueDropzone.dropzone.options.url = window.axios.defaults.baseURL + "task/".concat(data.data.id, "/files/upload");
+      axios.post('task', this.task).then(function (_ref6) {
+        var data = _ref6.data;
+        _this7.$refs.myVueDropzone.dropzone.options.url = window.axios.defaults.baseURL + "task/".concat(data.data.id, "/files/upload");
         setTimeout(function () {
-          _this5.$refs.myVueDropzone.processQueue();
+          _this7.$refs.myVueDropzone.processQueue();
         }, 500);
       })["catch"](function (e) {
         console.log(e);
         var errors = e.response.data.errors;
         Object.keys(errors).forEach(function (key) {
-          _this5.$toastr.error(errors[key], "Error!");
+          _this7.$toastr.error(errors[key], "Error!");
         });
       });
     }
@@ -474,20 +490,105 @@ var render = function() {
                           ])
                         : _vm._e(),
                       _vm._v(" "),
+                      _c("p", { staticClass: "date-time-task" }, [
+                        _c("b", [_vm._v("Status")]),
+                        _vm._v(
+                          ": " +
+                            _vm._s(_vm.task.status_value) +
+                            "\n                                "
+                        ),
+                        _vm.task.status == 4
+                          ? _c(
+                              "a",
+                              {
+                                attrs: { href: "javascript:;" },
+                                on: {
+                                  click: function($event) {
+                                    _vm.$dialog
+                                      .alert(_vm.task.cancellation_reason, {
+                                        okText: "close"
+                                      })
+                                      .then(function(dialog) {
+                                        return dialog.close()
+                                      })
+                                  }
+                                }
+                              },
+                              [_c("b", [_vm._v("(View Reason)")])]
+                            )
+                          : _vm._e()
+                      ]),
+                      _vm._v(" "),
                       _vm.task.type == 0
-                        ? _c("h5", { staticClass: "badge tx-5" }, [_vm._m(1)])
+                        ? _c("h5", { staticClass: "badge tx-5" }, [
+                            _c(
+                              "span",
+                              {
+                                staticClass: "badge light",
+                                style: "background-color:" + _vm.task.color
+                              },
+                              [
+                                _vm._v(
+                                  "\n                                    Task Type: "
+                                ),
+                                _c("b", [_vm._v("NONE")])
+                              ]
+                            )
+                          ])
                         : _vm._e(),
                       _vm._v(" "),
                       _vm.task.type == 1
-                        ? _c("h5", { staticClass: "badge tx-5" }, [_vm._m(2)])
+                        ? _c("h5", { staticClass: "badge tx-5" }, [
+                            _c(
+                              "span",
+                              {
+                                staticClass: "badge light",
+                                style: "background-color:" + _vm.task.color
+                              },
+                              [
+                                _vm._v(
+                                  "\n                                    Task Type: "
+                                ),
+                                _c("b", [_vm._v("CALLING")])
+                              ]
+                            )
+                          ])
                         : _vm._e(),
                       _vm._v(" "),
                       _vm.task.type == 2
-                        ? _c("h5", { staticClass: "badge tx-5" }, [_vm._m(3)])
+                        ? _c("h5", { staticClass: "badge tx-5" }, [
+                            _c(
+                              "span",
+                              {
+                                staticClass: "badge light",
+                                style: "background-color:" + _vm.task.color
+                              },
+                              [
+                                _vm._v(
+                                  "\n                                    Task Type: "
+                                ),
+                                _c("b", [_vm._v("PRIORITY")])
+                              ]
+                            )
+                          ])
                         : _vm._e(),
                       _vm._v(" "),
                       _vm.task.type == 3
-                        ? _c("h5", { staticClass: "badge tx-5" }, [_vm._m(4)])
+                        ? _c("h5", { staticClass: "badge tx-5" }, [
+                            _c(
+                              "span",
+                              {
+                                staticClass: "badge light",
+                                style: "background-color:" + _vm.task.color
+                              },
+                              [
+                                _vm._v(
+                                  "\n                                    Task Type: "
+                                ),
+                                _c("b", [_vm._v("SCHEDULE OR RECURRING")])
+                              ]
+                            )
+                          ])
                         : _vm._e()
                     ]
                   )
@@ -527,239 +628,126 @@ var render = function() {
                     )
                   ]),
                   _vm._v(" "),
-                   false
-                    ? 0
-                    : _vm._e()
-                ]),
-                _vm._v(" "),
-                _c("div", { staticClass: "row mt-4" }, [
-                  _c("div", { staticClass: "col-lg-4 col-md-6" }, [
-                    _c(
-                      "label",
-                      { staticClass: "task-d-label", attrs: { for: "" } },
-                      [_vm._v("Status")]
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "select",
-                      {
-                        directives: [
-                          {
-                            name: "model",
-                            rawName: "v-model",
-                            value: _vm.task.status,
-                            expression: "task.status"
-                          }
-                        ],
-                        staticClass: "form-control status",
-                        attrs: { name: "status_id", id: "status_id" },
-                        on: {
-                          change: function($event) {
-                            var $$selectedVal = Array.prototype.filter
-                              .call($event.target.options, function(o) {
-                                return o.selected
-                              })
-                              .map(function(o) {
-                                var val = "_value" in o ? o._value : o.value
-                                return val
-                              })
-                            _vm.$set(
-                              _vm.task,
-                              "status",
-                              $event.target.multiple
-                                ? $$selectedVal
-                                : $$selectedVal[0]
-                            )
-                          }
-                        }
-                      },
-                      [
-                        _c("option", { attrs: { value: "0" } }, [
-                          _vm._v("Pending")
-                        ]),
-                        _vm._v(" "),
-                        _c("option", { attrs: { value: "1" } }, [
-                          _vm._v("Active")
-                        ]),
-                        _vm._v(" "),
-                        _c("option", { attrs: { value: "2" } }, [
-                          _vm._v("WIP")
-                        ]),
-                        _vm._v(" "),
-                        _c("option", { attrs: { value: "3" } }, [
-                          _vm._v("Complete")
-                        ]),
-                        _vm._v(" "),
-                        _c("option", { attrs: { value: "4" } }, [
-                          _vm._v("Cancel")
-                        ])
-                      ]
-                    ),
-                    _vm._v(" "),
-                    _c("div", { staticClass: "flex-c" }, [
-                      _c(
-                        "button",
-                        {
-                          staticClass: "btn btn-handy-task",
-                          on: {
-                            click: function($event) {
-                              return _vm.changeStatus(_vm.task.id)
-                            }
-                          }
-                        },
-                        [_vm._v("Change\n                                ")]
-                      ),
-                      _vm._v(" "),
-                      _c("span", { staticClass: "update-meta" })
-                    ])
-                  ]),
-                  _vm._v(" "),
-                  _c("div", { staticClass: "col-lg-4 col-md-6" }, [
-                    _c(
-                      "label",
-                      { staticClass: "task-d-label", attrs: { for: "" } },
-                      [_vm._v("Assign")]
-                    ),
-                    _vm._v(" "),
-                    _c(
-                      "select",
-                      {
-                        directives: [
-                          {
-                            name: "model",
-                            rawName: "v-model",
-                            value: _vm.task.user_id,
-                            expression: "task.user_id"
-                          }
-                        ],
-                        staticClass: "form-control",
-                        attrs: { name: "resource_id", id: "resource_id" },
-                        on: {
-                          change: function($event) {
-                            var $$selectedVal = Array.prototype.filter
-                              .call($event.target.options, function(o) {
-                                return o.selected
-                              })
-                              .map(function(o) {
-                                var val = "_value" in o ? o._value : o.value
-                                return val
-                              })
-                            _vm.$set(
-                              _vm.task,
-                              "user_id",
-                              $event.target.multiple
-                                ? $$selectedVal
-                                : $$selectedVal[0]
-                            )
-                          }
-                        }
-                      },
-                      [
-                        _c("option", { attrs: { value: "" } }, [
-                          _vm._v("::Resource::")
-                        ]),
-                        _vm._v(" "),
-                        _vm._l(_vm.users, function(user, index) {
-                          return _c(
-                            "option",
-                            { key: index, domProps: { value: user.id } },
-                            [
-                              _vm._v(
-                                _vm._s(user.name) +
-                                  "\n                                "
-                              )
-                            ]
-                          )
-                        })
-                      ],
-                      2
-                    ),
-                    _vm._v(" "),
-                    _c("div", { staticClass: "flex-c" }, [
-                      _c(
-                        "button",
-                        {
-                          staticClass: "btn btn-handy-task",
-                          on: {
-                            click: function($event) {
-                              return _vm.assignResource(_vm.task.id)
-                            }
-                          }
-                        },
-                        [_vm._v("Assign\n                                ")]
-                      ),
-                      _vm._v(" "),
-                      _c("span", { staticClass: "update-meta" })
-                    ])
-                  ])
-                ]),
-                _vm._v(" "),
-                _c("div", { staticClass: "row mt-4" }, [
-                  _c("div", { staticClass: "col-lg-4 col-md-6" }, [
-                    _c(
-                      "label",
-                      { staticClass: "task-d-label", attrs: { for: "" } },
-                      [_vm._v("Charge by Tasks:")]
-                    ),
-                    _vm._v(" "),
-                    _c("div", { staticClass: "d-flex" }, [
-                      _c(
-                        "span",
-                        {
-                          staticClass: "minus",
-                          staticStyle: { height: "38px", margin: "0px" },
-                          on: {
-                            click: function($event) {
-                              _vm.charge == 1 ? (_vm.charge = 1) : _vm.charge--
-                            }
-                          }
-                        },
-                        [_vm._v("-")]
-                      ),
-                      _vm._v(" "),
-                      _c("input", {
-                        directives: [
-                          {
-                            name: "model",
-                            rawName: "v-model",
-                            value: _vm.charge,
-                            expression: "charge"
-                          }
-                        ],
-                        staticClass:
-                          "m-0 task-input custom-form-control task_count",
-                        staticStyle: { "border-radius": "0px" },
-                        attrs: { type: "text" },
-                        domProps: { value: _vm.charge },
-                        on: {
-                          change: function($event) {
-                            _vm.charge < 1 ? (_vm.charge = 1) : _vm.charge
-                          },
-                          input: function($event) {
-                            if ($event.target.composing) {
-                              return
-                            }
-                            _vm.charge = $event.target.value
-                          }
-                        }
-                      }),
-                      _vm._v(" "),
-                      _c(
-                        "span",
-                        {
-                          staticClass: "plus",
-                          staticStyle: { height: "38px" },
-                          on: {
-                            click: function($event) {
-                              _vm.charge++
-                            }
-                          }
-                        },
-                        [_vm._v("+")]
-                      )
+                  _c("div", { staticClass: "col-lg-12 mt-lg-0 mt-3" }, [
+                    _c("h5", { staticClass: "tx-bold" }, [
+                      _vm._v("Internal Notes")
                     ]),
                     _vm._v(" "),
-                    _vm._m(6)
+                    _c(
+                      "div",
+                      { staticClass: "notes-wrap" },
+                      _vm._l(_vm.task.notes, function(note, nid) {
+                        return _c(
+                          "div",
+                          { key: nid, staticClass: "note row" },
+                          [
+                            _c(
+                              "div",
+                              { staticClass: "col-md-11 col-sm-11 col-xs-11" },
+                              [
+                                _c("p", { staticClass: "post-response" }, [
+                                  _vm._v(
+                                    "\n                                            " +
+                                      _vm._s(note.note) +
+                                      "\n                                        "
+                                  )
+                                ]),
+                                _vm._v(" "),
+                                _c("small", { staticClass: "posted-by" }, [
+                                  _vm._v("By "),
+                                  _c("span", [_vm._v(_vm._s(note.user.name))]),
+                                  _vm._v(
+                                    "\n                                            on " +
+                                      _vm._s(note.created_date) +
+                                      "\n                                        "
+                                  )
+                                ])
+                              ]
+                            ),
+                            _vm._v(" "),
+                            _c(
+                              "div",
+                              { staticClass: "col-md-1 col-sm-1 col-xs-1" },
+                              [
+                                note.isauthor
+                                  ? _c("p", { staticClass: "delete" }, [
+                                      _c(
+                                        "a",
+                                        {
+                                          attrs: { href: "javascript:void(0)" },
+                                          on: {
+                                            click: function($event) {
+                                              return _vm.deleteNote(note.id)
+                                            }
+                                          }
+                                        },
+                                        [
+                                          _c("i", {
+                                            staticClass: "fa fa-times"
+                                          })
+                                        ]
+                                      )
+                                    ])
+                                  : _vm._e()
+                              ]
+                            )
+                          ]
+                        )
+                      }),
+                      0
+                    ),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "row notes-div" }, [
+                      _c("div", { staticClass: "col-12 post-a-note" }, [
+                        _c("textarea", {
+                          directives: [
+                            {
+                              name: "model",
+                              rawName: "v-model",
+                              value: _vm.note,
+                              expression: "note"
+                            }
+                          ],
+                          staticClass: "form-control",
+                          attrs: {
+                            id: "note-text",
+                            cols: "30",
+                            rows: "4",
+                            maxlength: "1200"
+                          },
+                          domProps: { value: _vm.note },
+                          on: {
+                            input: function($event) {
+                              if ($event.target.composing) {
+                                return
+                              }
+                              _vm.note = $event.target.value
+                            }
+                          }
+                        })
+                      ])
+                    ]),
+                    _vm._v(" "),
+                    _c("div", { staticClass: "row" }, [
+                      _c("div", { staticClass: "col-12 text-right mt-3" }, [
+                        _c(
+                          "button",
+                          {
+                            staticClass: "btn btn-handy-task",
+                            on: {
+                              click: function($event) {
+                                return _vm.addNote()
+                              }
+                            }
+                          },
+                          [
+                            _vm._v(
+                              "ADD\n                                        NOTE"
+                            )
+                          ]
+                        )
+                      ])
+                    ])
                   ])
                 ]),
                 _vm._v(" "),
@@ -804,38 +792,119 @@ var render = function() {
               _vm._v(" "),
               _c("div", { staticClass: "card-footer" }, [
                 _c("div", { staticClass: "row my-2" }, [
-                  _c(
-                    "div",
-                    { staticClass: "col-12 text-center" },
-                    [
-                      _c(
-                        "button",
-                        { staticClass: "btn btn-handy-task mr-md-2 mr-0" },
-                        [_vm._v("Extensive Task")]
-                      ),
-                      _vm._v(" "),
-                      _c(
-                        "router-link",
-                        {
-                          staticClass: "btn btn-handy-task mr-md-2 mr-0",
-                          attrs: {
-                            to: {
-                              name: "task.logs",
-                              params: { id: _vm.task.id }
-                            }
-                          }
-                        },
-                        [_vm._v("View Activity Logs")]
+                  _vm.task.status !== 4
+                    ? _c(
+                        "div",
+                        { staticClass: "col-12 text-center" },
+                        [
+                          _c(
+                            "button",
+                            {
+                              staticClass:
+                                "btn btn-handy-task mr-md-2 mb-md-0 mb-2 d-md-inline-block d-table mx-auto",
+                              attrs: {
+                                "data-toggle": "modal",
+                                "data-target": "#reason"
+                              }
+                            },
+                            [_vm._v("Cancel Task")]
+                          ),
+                          _vm._v(" "),
+                          _c("button", {
+                            staticClass: "btn btn-handy-task mr-md-2 mr-0",
+                            class: Number(_vm.task.is_extensive)
+                              ? "bg-warning"
+                              : "bg-danger",
+                            domProps: {
+                              textContent: _vm._s(
+                                Number(_vm.task.is_extensive)
+                                  ? "Make Task Non Extensive"
+                                  : "Make Task Extensive"
+                              )
+                            },
+                            on: { click: _vm.makeTaskExtensive }
+                          }),
+                          _vm._v(" "),
+                          _c(
+                            "router-link",
+                            {
+                              staticClass: "btn btn-handy-task mr-md-2 mr-0",
+                              attrs: {
+                                to: {
+                                  name: "task.logs",
+                                  params: { id: _vm.task.id }
+                                }
+                              }
+                            },
+                            [_vm._v("View Activity Logs")]
+                          )
+                        ],
+                        1
                       )
-                    ],
-                    1
-                  )
+                    : _vm._e()
                 ])
               ])
             ])
           ])
         ])
-      : _vm._e()
+      : _vm._e(),
+    _vm._v(" "),
+    _c("div", { staticClass: "modal fade", attrs: { id: "reason" } }, [
+      _c("div", { staticClass: "modal-dialog" }, [
+        _c("div", { staticClass: "modal-content" }, [
+          _vm._m(1),
+          _vm._v(" "),
+          _c("form", { attrs: { action: "" } }, [
+            _c("div", { staticClass: "modal-body" }, [
+              _c("div", { staticClass: "form-group" }, [
+                _c("textarea", {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.reason,
+                      expression: "reason"
+                    }
+                  ],
+                  staticClass: "form-control",
+                  attrs: { rows: "4", id: "comment" },
+                  domProps: { value: _vm.reason },
+                  on: {
+                    input: function($event) {
+                      if ($event.target.composing) {
+                        return
+                      }
+                      _vm.reason = $event.target.value
+                    }
+                  }
+                })
+              ])
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "modal-footer" }, [
+              _c(
+                "button",
+                {
+                  staticClass: "btn btn-danger light",
+                  attrs: { type: "button", "data-dismiss": "modal" }
+                },
+                [_vm._v("Close")]
+              ),
+              _vm._v(" "),
+              _c(
+                "button",
+                {
+                  staticClass: "btn btn-primary",
+                  attrs: { type: "button" },
+                  on: { click: _vm.changeStatus }
+                },
+                [_vm._v("Cancel Task")]
+              )
+            ])
+          ])
+        ])
+      ])
+    ])
   ])
 }
 var staticRenderFns = [
@@ -874,81 +943,16 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("span", { staticClass: "badge light badge-default" }, [
-      _vm._v("\n                                    Task Type: "),
-      _c("b", [_vm._v("NONE")])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("span", { staticClass: "badge light badge-success" }, [
-      _vm._v("\n                                    Task Type: "),
-      _c("b", [_vm._v("CALLING")])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("span", { staticClass: "badge light badge-warning" }, [
-      _vm._v("\n                                    Task Type: "),
-      _c("b", [_vm._v("PRIORITY")])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("span", { staticClass: "badge light badge-danger" }, [
-      _vm._v("\n                                    Task Type: "),
-      _c("b", [_vm._v("SCHEDULE OR RECURRING")])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "notes-wrap" }, [
-      _c("div", { staticClass: "note row" }, [
-        _c("div", { staticClass: "col-md-11 col-sm-11 col-xs-11" }, [
-          _c("p", { staticClass: "post-response" }, [
-            _vm._v("sdvsd "),
-            _c("i", { staticClass: "fa  fa-check" })
-          ]),
-          _vm._v(" "),
-          _c("small", { staticClass: "posted-by" }, [
-            _vm._v("By "),
-            _c("span", [_vm._v("sajjad ali")]),
-            _vm._v(
-              "\n                                            on 25 Jul, 2021 | 07:07 PM\n                                        "
-            )
-          ])
-        ]),
-        _vm._v(" "),
-        _c("div", { staticClass: "col-md-1 col-sm-1 col-xs-1" }, [
-          _c("p", { staticClass: "delete" }, [
-            _c("a", { attrs: { href: "javascript:void(0)" } }, [
-              _c("i", { staticClass: "fa fa-times" })
-            ])
-          ])
-        ])
-      ])
-    ])
-  },
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "flex-c" }, [
+    return _c("div", { staticClass: "modal-header" }, [
+      _c("h5", { staticClass: "modal-title" }, [_vm._v("Please Enter Reason")]),
+      _vm._v(" "),
       _c(
         "button",
         {
-          staticClass: "btn btn-handy-task",
-          attrs: { type: "submit", onclick: "chargeTask('6')" }
+          staticClass: "close",
+          attrs: { type: "button", "data-dismiss": "modal" }
         },
-        [_vm._v("Charge\n                                    Now")]
+        [_c("span", [_vm._v("×")])]
       )
     ])
   }

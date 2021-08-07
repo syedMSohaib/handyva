@@ -24,12 +24,6 @@ p.task-description.expanded {
     font-size: 14px;
 }
 
-.heading-badge {
-    background: #eb8153;
-    display: table;
-    padding: 5px 10px;
-    border-radius: 5px;
-}
 
 .badge {
     padding: 5px 10px;

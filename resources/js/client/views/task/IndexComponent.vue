@@ -4,86 +4,101 @@
         <div class="row page-titles mx-0">
             <div class="col-sm-6 p-md-0">
                 <div class="welcome-text">
-                    <h4>{{ $route.meta.title }}</h4>
+                    <h4>{{ $route.query.qt ? $route.query.qt : $route.meta.title }}
+
+                        ( {{ data.length }} )
+                    </h4>
                 </div>
             </div>
             <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex">
+                <input type="text" v-model="query" @change="getTask()" class="search-task form-control" placeholder="Search By Task Title">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
                     <li class="breadcrumb-item active"><a href="javascript:void(0)">All Task</a></li>
                 </ol>
             </div>
+            <div class="col-12 text-right pull-right mt-4 mr-0 pr-0">
+                <router-link class="btn btn-handy-task mr-0 btn-sm" :to="{ name: 'task.create'}">
+                    Create task
+                </router-link>
+            </div>
         </div>
         <!-- row -->
 
-
         <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <router-link class="mt-2" :to="{ name: 'task.create'}"><h4 class="card-title">Create Task</h4></router-link>
+            <div v-for="(task, index) in data" :key="index" class="col-xl-6">
+                <div class="card task-card">
+                    <div class="card-header justify-content-between align-items-center">
+                        <h5>TASK ID: {{ task.id }}</h5>
+                        <h5 class="card-title">Status :
+                           <span>
+                            {{ task.status_value }}</span></h5>
+                        <p :style="`background-color:${task.color}`" class="text-white p-1 date-time-task m-0">
+                            <b>{{ task.task_type_value }}</b>
+                        </p>
                     </div>
-
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table id="tasktable" class="table display" style="min-width: 845px">
-                                <thead>
-                                    <tr>
-                                        <th>TaskID</th>
-                                        <th>Created at</th>
-                                        <th>Client Name</th>
-                                        <th>Client Email</th>
-                                        <th>Subject</th>
-                                        <th>Task Type</th>
-                                        <th>Task Status</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(task, index) in data" :key="index">
-                                        <td>{{task.id}}</td>
-                                        <td>{{task.created_date}}</td>
-                                        <td>{{task.client.name}}</td>
-                                        <td>{{task.client.email}}</td>
-                                        <td>{{task.title}}</td>
-                                        <td>
-                                            <span :class="`badge light badge-${type_class[task.type]}`">
-                                                {{task.task_type_value}}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <!-- <span :class="`badge light badge-${type_class[task.status]}`"> -->
-                                                {{task.status_value}}
-                                            <!-- </span> -->
-                                        </td>
-
-                                        <td>
-                                            <div class="d-flex">
-                                                <router-link :to="{ name: 'task.show', params: { id:  task.id } }" title="View Task"
-                                                    class="btn btn-primary shadow btn-xs sharp mr-1"><i class="fa fa-eye"></i></router-link>
-                                                <a href="javascript:;" @click.prevent="deleteTask(task.id)" title="View Task" class="btn btn-danger shadow btn-xs sharp"><i class="fa fa-trash"></i></a>
-                                            </div>
-                                        </td>
-
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <h4 class="heading-badge text-white">Subject:</h4>
+                                <p class="card-text task-subject">
+                                    {{ task.title }}
+                                </p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <h4 class="heading-badge text-white">Task Description:</h4>
+                                <p class="" v-text="task.toggle ? task.description : task.mini"></p>
+                                <a href="javascript:;"
+                                    @click="task.toggle = !task.toggle"
+                                    v-text="task.toggle ? 'Read Less' : 'Read More'"></a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer d-sm-flex justify-content-between align-items-center">
+                        <div class="card-footer-link mb-4 mb-sm-0">
+                            <p class="card-text d-inline">Task Created:
+                                {{ task.created_date}}
+                            </p>
+                        </div>
+                        <div class="d-flex" >
+                            <router-link :to="{ name: 'task.edit', params: { id:  task.id } }" title="View Task"
+                                class="btn btn-warning shadow btn-xs sharp mr-1"><i class="fa fa-pencil"></i></router-link>
+                            <router-link :to="{ name: 'task.show', params: { id:  task.id } }" title="View Task"
+                                class="btn btn-primary shadow btn-xs sharp mr-1"><i class="fa fa-eye"></i></router-link>
+                            <a href="javascript:;" @click.prevent="deleteTask(task.id)" title="View Task" class="btn btn-danger shadow btn-xs sharp"><i class="fa fa-trash"></i></a>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="col-12 pl-4 " v-if="data.length == 0">
+                No task found
+            </div>
+
         </div>
+
     </div>
 </template>
+<style>
+    .search-task{
+        max-width: 200px;
+        margin-right: 10px;
+        border-radius: 0px;
+    }
 
+</style>
 <script>
     import Datepicker from 'vuejs-datepicker';
     export default {
         data() {
             return {
                 data: [],
-                from:'',
-                to:'',
+                from: '',
+                to: '',
+                query: '',
                 table: undefined,
                 type_class: [
                     'default',
@@ -93,7 +108,9 @@
                 ]
             }
         },
-        components: { Datepicker },
+        components: {
+            Datepicker
+        },
         mounted() {
             this.getTask();
         },
@@ -105,10 +122,13 @@
                     status: typeof this.$route.query.status !== 'undefined' ? this.$route.query.status : '',
                     excess: typeof this.$route.query.excess !== 'undefined' ? this.$route.query.status : '',
                     extensive: typeof this.$route.query.extensive !== 'undefined' ? this.$route.query.status : '',
-                    recurring: typeof  this.$route.query.recurring !== 'undefined' ? this.$route.query.status : '',
+                    recurring: typeof this.$route.query.recurring !== 'undefined' ? this.$route.query.status : '',
+                    title: this.query
                 }
                 axios.get(`/task?${this.buildqueryparams(query)}`)
-                    .then(({data}) => {
+                    .then(({
+                        data
+                    }) => {
                         this.data = data;
                         setTimeout(() => this.table = $('#tasktable').DataTable(), 100);
                     });
@@ -125,7 +145,7 @@
             }
         },
         watch: {
-            '$route' : function() {
+            '$route': function () {
                 this.getTask();
             },
             // 'excess' : function() {
@@ -140,4 +160,3 @@
         }
     }
 </script>
-

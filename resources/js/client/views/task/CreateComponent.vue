@@ -11,7 +11,8 @@
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
                     <li class="breadcrumb-item"><a href="javascript:void(0)">All Task</a></li>
-                    <li class="breadcrumb-item active"><a href="javascript:void(0)">Create Task</a></li>
+                    <li v-if="$route.params.id" class="breadcrumb-item active"><a href="javascript:void(0)">Edit Task</a></li>
+                    <li v-else class="breadcrumb-item active"><a href="javascript:void(0)">Create Task</a></li>
                 </ol>
             </div>
         </div>

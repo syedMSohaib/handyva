@@ -273,12 +273,74 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 // import BarChart from "./BarChart.vue";
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   components: {// BarChart,
   },
   data: function data() {
     return {
+      data: undefined,
       baseUrl: window.base_url,
       years: Array.from({
         length: 10
@@ -287,7 +349,9 @@ __webpack_require__.r(__webpack_exports__);
       }),
       filter: new Date().getFullYear(),
       user: undefined,
-      task: undefined
+      task: undefined,
+      referrels: [],
+      reminders: []
     };
   },
   mounted: function mounted() {
@@ -299,8 +363,10 @@ __webpack_require__.r(__webpack_exports__);
 
       axios.get("/dashboard?year=".concat(this.filter)).then(function (_ref) {
         var data = _ref.data;
+        _this.reminders = data.reminders;
         _this.user = data.user;
         _this.task = data.task;
+        _this.referrels = data.referrels;
       });
     }
   },
@@ -810,11 +876,72 @@ var render = function() {
         ])
       : _vm._e(),
     _vm._v(" "),
+    _c("div", { staticClass: "row" }, [
+      _c("div", { staticClass: "col-xl-12" }, [
+        _c("div", { staticClass: "card" }, [
+          _c("div", { staticClass: "card-header border-0 flex-wrap pb-0" }, [
+            _c("div", { staticClass: "mb-3" }, [
+              _c("h4", { staticClass: "fs-20 text-black" }, [
+                _vm._v(
+                  "Today's Reminders (" + _vm._s(_vm.reminders.length) + ")"
+                )
+              ])
+            ])
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "card-body pb-0" }, [
+            _c(
+              "table",
+              {
+                staticClass: "table display",
+                staticStyle: { "min-width": "845px" },
+                attrs: { id: "referralTable" }
+              },
+              [
+                _vm._m(8),
+                _vm._v(" "),
+                _c(
+                  "tbody",
+                  [
+                    _vm._l(_vm.reminders, function(rem, index) {
+                      return _c(
+                        "tr",
+                        {
+                          key: index,
+                          class: rem.color ? rem.color + " text-white" : ""
+                        },
+                        [
+                          _c("td", [_vm._v(_vm._s(rem.id))]),
+                          _vm._v(" "),
+                          _c("td", [_vm._v(_vm._s(rem.title))]),
+                          _vm._v(" "),
+                          _c("td", [_vm._v(_vm._s(rem.description))])
+                        ]
+                      )
+                    }),
+                    _vm._v(" "),
+                    !_vm.reminders.length
+                      ? _c("tr", [
+                          _c("td", { attrs: { colspan: "6" } }, [
+                            _vm._v("No Reminders for today ")
+                          ])
+                        ])
+                      : _vm._e()
+                  ],
+                  2
+                )
+              ]
+            )
+          ])
+        ])
+      ])
+    ]),
+    _vm._v(" "),
     _vm.user
       ? _c("div", { staticClass: "row" }, [
           _c("div", { staticClass: "col-lg-12" }, [
             _c("div", { staticClass: "card text-white bg-secondary" }, [
-              _vm._m(8),
+              _vm._m(9),
               _vm._v(" "),
               _c("div", { staticClass: "card-body mb-0" }, [
                 _c("div", { staticClass: "row" }, [
@@ -903,7 +1030,77 @@ var render = function() {
         ])
       : _vm._e(),
     _vm._v(" "),
-    _vm._m(9)
+    _c("div", { staticClass: "row" }, [
+      _c("div", { staticClass: "col-xl-12" }, [
+        _c("div", { staticClass: "card" }, [
+          _vm._m(10),
+          _vm._v(" "),
+          _c("div", { staticClass: "card-body pb-0" }, [
+            _c(
+              "table",
+              {
+                staticClass: "table display",
+                staticStyle: { "min-width": "845px" },
+                attrs: { id: "referralTable" }
+              },
+              [
+                _vm._m(11),
+                _vm._v(" "),
+                _c(
+                  "tbody",
+                  [
+                    _vm._l(_vm.data, function(ref, index) {
+                      return _c("tr", { key: index }, [
+                        _c("td", [_vm._v(_vm._s(ref.id))]),
+                        _vm._v(" "),
+                        _c("td", [_vm._v(_vm._s(ref.created_date))]),
+                        _vm._v(" "),
+                        _c("td", [_vm._v(_vm._s(ref.referral_code))]),
+                        _vm._v(" "),
+                        _c("td", [_vm._v(_vm._s(ref.referred_client_name))]),
+                        _vm._v(" "),
+                        _c("td", [_vm._v(_vm._s(ref.referred_client_email))]),
+                        _vm._v(" "),
+                        _c("td", [
+                          _c(
+                            "span",
+                            {
+                              class:
+                                "badge light badge-" +
+                                _vm.type_class[ref.registration_status]
+                            },
+                            [
+                              _vm._v(
+                                "\n                                            " +
+                                  _vm._s(
+                                    ref.registration_status
+                                      ? "Registered"
+                                      : "Pending"
+                                  ) +
+                                  "\n                                        "
+                              )
+                            ]
+                          )
+                        ])
+                      ])
+                    }),
+                    _vm._v(" "),
+                    !_vm.referrels.length
+                      ? _c("tr", [
+                          _c("td", { attrs: { colspan: "6" } }, [
+                            _vm._v("No Referrels found yet")
+                          ])
+                        ])
+                      : _vm._e()
+                  ],
+                  2
+                )
+              ]
+            )
+          ])
+        ])
+      ])
+    ])
   ])
 }
 var staticRenderFns = [
@@ -984,6 +1181,20 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
+    return _c("thead", [
+      _c("tr", [
+        _c("th", [_vm._v("ID")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("Title")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("Description")])
+      ])
+    ])
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
     return _c(
       "div",
       {
@@ -1005,40 +1216,35 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "row" }, [
-      _c("div", { staticClass: "col-xl-12" }, [
-        _c("div", { staticClass: "card" }, [
-          _c("div", { staticClass: "card-header border-0 flex-wrap pb-0" }, [
-            _c("div", { staticClass: "mb-3" }, [
-              _c("h4", { staticClass: "fs-20 text-black" }, [
-                _vm._v("Referral Analytics")
-              ]),
-              _vm._v(" "),
-              _c("p", { staticClass: "mb-0 fs-12 text-black" }, [
-                _vm._v("Lorem ipsum dolor sit amet, consectetur")
-              ])
-            ]),
-            _vm._v(" "),
-            _c(
-              "select",
-              { staticClass: "form-control style-1 default-select" },
-              [
-                _c("option", [_vm._v("Weekly (2021)")]),
-                _vm._v(" "),
-                _c("option", [_vm._v("Daily (2021)")]),
-                _vm._v(" "),
-                _c("option", [_vm._v("Yearly (2021)")])
-              ]
-            )
-          ]),
-          _vm._v(" "),
-          _c("div", { staticClass: "card-body pb-0" }, [
-            _c("div", {
-              staticClass: "market-line",
-              attrs: { id: "marketChart" }
-            })
-          ])
+    return _c("div", { staticClass: "card-header border-0 flex-wrap pb-0" }, [
+      _c("div", { staticClass: "mb-3" }, [
+        _c("h4", { staticClass: "fs-20 text-black" }, [
+          _vm._v("Referral Analytics")
+        ]),
+        _vm._v(" "),
+        _c("p", { staticClass: "mb-0 fs-12 text-black" }, [
+          _vm._v("No of referred clients onboard on the platforms")
         ])
+      ])
+    ])
+  },
+  function() {
+    var _vm = this
+    var _h = _vm.$createElement
+    var _c = _vm._self._c || _h
+    return _c("thead", [
+      _c("tr", [
+        _c("th", [_vm._v("ID")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("Created at")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("Referral Code")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("Referred Client Name")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("Referred Client Email")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("Registration Status")])
       ])
     ])
   }

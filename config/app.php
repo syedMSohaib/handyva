@@ -15,6 +15,7 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'task_limit_per_day' => 5,
     /*
     |--------------------------------------------------------------------------
     | Application Environment

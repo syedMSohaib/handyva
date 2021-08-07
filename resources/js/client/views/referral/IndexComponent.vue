@@ -20,6 +20,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="card">
+                    <div class="card-header">
+                        <router-link class="mt-2" :to="{ name: 'referral.create'}"><h4 class="card-title">Create Referral</h4></router-link>
+                    </div>
+
                     <div class="card-body">
                         <div class="table-responsive">
                             <table id="referralTable" class="table display" style="min-width: 845px">
@@ -27,8 +31,6 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Created at</th>
-                                        <th>Client Name</th>
-                                        <th>Client Current Plan</th>
                                         <th>Referral Code</th>
                                         <th>Referred Client Name</th>
                                         <th>Referred Client Email</th>
@@ -39,8 +41,6 @@
                                     <tr v-for="(ref, index) in data" :key="index">
                                         <td>{{ref.id}}</td>
                                         <td>{{ref.created_date}}</td>
-                                        <td>{{ref.client.name}}</td>
-                                        <td>{{ref.client.plan.title}} [{{ref.client.plan.no_of_task}} Tasks]</td>
                                         <td>{{ref.referral_code}}</td>
                                         <td>{{ref.referred_client_name}}</td>
                                         <td>{{ref.referred_client_email}}</td>

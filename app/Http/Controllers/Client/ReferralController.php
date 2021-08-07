@@ -13,7 +13,7 @@ class ReferralController extends Controller
      *
      * @return void
      */
-    public function index(){
-        return Referral::with('client.plan')->latest()->get();
+    public function index(Request $request){
+        return Referral::with('client.plan')->whereClientId($request->user()->id)->latest()->get();
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -47,7 +48,17 @@ class Client extends Authenticatable
         "address",
         "city",
         "state",
-        "zipcode"
+        "zipcode",
+        "stripe_customer_id",
+        "verified_email",
+        "dob",
+        "gender",
+        "homephone",
+        "cellphone",
+        "skype",
+        "work_address",
+        "mailing_address",
+        "temp_address",
     ];
 
 
@@ -71,7 +82,7 @@ class Client extends Authenticatable
         'next_billing_date' => 'datetime',
     ];
 
-    protected $appends = ['name', 'created_date', 'billing_date'];
+    protected $appends = ['name', 'created_date', 'billing_date', 'can_change_package'];
 
     public function getNameAttribute(){
         return "{$this->first_name} {$this->last_name}";
@@ -81,6 +92,10 @@ class Client extends Authenticatable
         return $this->next_billing_date->format(config('app.date_format'));
     }
 
+    public function getCanChangePackageAttribute(){
+        $diff = Carbon::now()->diffInDays($this->next_billing_date);
+        return (Carbon::now() < $this->next_billing_date) && ($diff >= 1 && $diff <= 3);
+    }
 
     public function getCreatedDateAttribute(){
         return $this->created_at->format(config('app.date_format'));
@@ -98,8 +113,6 @@ class Client extends Authenticatable
             : asset("cover.png");
     }
 
-
-
     public function plan(){
         return $this->belongsTo(Package::class, 'current_plan');
     }
@@ -107,4 +120,5 @@ class Client extends Authenticatable
     public function task(){
         return $this->hasMany(Task::class, 'client_id');
     }
+
 }

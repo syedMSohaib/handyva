@@ -44,6 +44,7 @@
         }
 
     </script>
+    <script src="https://js.stripe.com/v3"></script>
     <script defer="true" src="{{ asset('js/client/app.js') }}"></script>
     <script defer="true" src="{{ asset('vendor/datatables/js/jquery.dataTables.min.js') }}"></script>
     <script defer="true" src="https://dev28.onlinetestingserver.com/soachatcentralizedWeb/js/ocs.js"></script>

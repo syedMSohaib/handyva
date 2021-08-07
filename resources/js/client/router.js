@@ -6,14 +6,18 @@ const DashboardComponent        = () => import(/* webpackChunkName: "client-dash
 const AllNotificationComponent  = () => import(/* webpackChunkName: "client-dashboard" */ './views/dashboard/AllNotificationComponent');
 
 // Profile
-const ProfileComponent          = () => import(/* webpackChunkName:  "client-profile-view" */ './views/dashboard/ProfileComponent');
-const EditProfileComponent      = () => import(/* webpackChunkName:  "client-profile-edit" */ './views/dashboard/EditProfileComponent');
+const ProfileComponent          = () => import(/* webpackChunkName:  "client-profile-view" */ './views/profile/ProfileComponent');
+const SocialLifeComponent       = () => import(/* webpackChunkName:  "client-profile-social_life" */ './views/profile/SocialLifeComponent');
+const TravelComponent           = () => import(/* webpackChunkName:  "client-profile-contacts" */ './views/profile/TravelComponent');
+const ContactComponent          = () => import(/* webpackChunkName:  "client-profile-travels" */ './views/profile/ContactComponent');
+
 
 // Task
 const TaskComponent             = () => import(/* webpackChunkName: "client-task-index" */ './views/task/IndexComponent');
 const TaskCreateComponent       = () => import(/* webpackChunkName: "client-task-create" */ './views/task/CreateComponent');
 const TaskShowComponent         = () => import(/* webpackChunkName: "client-task-show" */ './views/task/ShowComponent');
 const TaskLogComponent          = () => import(/* webpackChunkName: "client-task-log" */ './views/task/LogComponent');
+const TaskEditComponent         = () => import(/* webpackChunkName: "client-task-edit" */ './views/task/EditComponent');
 
 // Employee
 const EmployeeComponent         = () => import(/* webpackChunkName: "client-employee-index" */ './views/employee/IndexComponent');
@@ -33,9 +37,16 @@ const BlogShowComponent         = () => import(/* webpackChunkName: "client-blog
 
 // Referrals
 const ReferralComponent         = () => import(/* webpackChunkName: "client-Referral-index" */ './views/referral/IndexComponent');
+const ReferralCreateComponent         = () => import(/* webpackChunkName: "client-Referral-create" */ './views/referral/CreateComponent');
 
 // Chat
-const ChatComponent             = () => import(/* webpackChunkName: "admin.chat" */ './views/chat/ChatComponent');
+const ChatComponent             = () => import(/* webpackChunkName: "client.chat" */ './views/chat/ChatComponent');
+
+//reminders
+const ReminderComponent         = () => import(/* webpackChunkName: "client.reminder" */ './views/reminder/IndexComponent');
+
+//faqs
+const FaqComponent              = () => import(/* webpackChunkName: "client.reminder" */ './views/faq/IndexComponent');
 
 const router = new VueRouter({
     mode: 'history',
@@ -68,6 +79,33 @@ const router = new VueRouter({
                 description: ""
             }
         },
+        {
+            path: '/profile/social-life',
+            name: 'profile.social_life',
+            component: SocialLifeComponent,
+            meta: {
+                title: "Social Life",
+                description: ""
+            }
+        },
+        {
+            path: '/profile/travels',
+            name: 'profile.travels',
+            component: TravelComponent,
+            meta: {
+                title: "My Travels",
+                description: ""
+            }
+        },
+        {
+            path: '/profile/contacts',
+            name: 'profile.contacts',
+            component: ContactComponent,
+            meta: {
+                title: "My Contacts",
+                description: ""
+            }
+        },
 
         {
             path: '/task',
@@ -96,6 +134,16 @@ const router = new VueRouter({
                 description: ""
             }
         },
+        {
+            path: '/task/:id/edit',
+            name: 'task.edit',
+            component: TaskEditComponent,
+            meta: {
+                title: "Task - Edit",
+                description: ""
+            }
+        },
+
         {
             path: '/task/:id/logs',
             name: 'task.logs',
@@ -169,6 +217,15 @@ const router = new VueRouter({
             }
         },
         {
+            path: '/reminders',
+            name: 'reminders',
+            component: ReminderComponent,
+            meta: {
+                title: "My Reminders",
+                description: ""
+            }
+        },
+        {
             path: '/blog',
             name: 'blog',
             component: BlogComponent,
@@ -205,11 +262,29 @@ const router = new VueRouter({
             }
         },
         {
+            path: '/referral/create',
+            name: 'referral.create',
+            component: ReferralCreateComponent,
+            meta: {
+                title: "Create Referral",
+                description: ""
+            }
+        },
+        {
             path: '/chat',
             name: 'chat',
             component: ChatComponent,
             meta: {
                 title: "Chat",
+                description: ""
+            }
+        },
+        {
+            path: '/faq',
+            name: 'faqs',
+            component: FaqComponent,
+            meta: {
+                title: "FAQs",
                 description: ""
             }
         },

@@ -32,6 +32,8 @@ class CreateTasksTable extends Migration
             $table->string("occurrence")->nullable();
             $table->string("repeat_every")->nullable();
             $table->text("repeat_on")->nullable();
+            $table->string("user_id")->nullable();
+            $table->tinyInteger("is_extensive")->default(0);
             $table->timestamps();
         });
     }

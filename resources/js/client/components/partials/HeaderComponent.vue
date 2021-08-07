@@ -98,7 +98,7 @@
                                     <img src="https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=Admin"  width="20"  :alt="user.name">
 									<div class="header-info">
 										<span>{{user.name}}</span>
-										<small>Super Admin</small>
+										<small>Client Panel</small>
 									</div>
 								</a>
 								<div class="dropdown-menu dropdown-menu-right">

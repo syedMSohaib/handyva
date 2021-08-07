@@ -9,7 +9,7 @@
                 <p class="mb-0 fs-14 font-w400">{{user.email}}</p>
             </div>
             <PerfectScrollbar ref="scrollbar">
-                <ul class="metismenu" id="menu">
+                <ul class="metismenu" id="menu" style="margin-bottom: 20%">
                     <li class="mm-active">
                         <router-link class="ai-icon" :to="{ name: 'home' }">
                             <i class="flaticon-144-layout"></i>
@@ -23,27 +23,34 @@
                         </a>
                         <ul aria-expanded="false">
                             <li><router-link :to="{ name: 'task'}">All Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 1 } }" >Active Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 0 } }" >Pending Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { excess: 1 } }" >Excess Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 2 } }" >WIP Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { extensive: 1 } }" >Extensive Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { recurring: 1 } }" >Recurring Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 3 } }" >Completed Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 4 } }" >Cancelled Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'Active Tasks', status: 1 } }" >Active Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'Pending Tasks', status: 0 } }" >Pending Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'Excess Tasks', excess: 1 } }" >Excess Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'WIP Tasks', status: 2 } }" >WIP Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'Extensive Tasks', extensive: 1 } }" >Extensive Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'Recurring Tasks', recurring: 1 } }" >Recurring Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'Completed Tasks', status: 3 } }" >Completed Tasks</router-link></li>
+                            <li><router-link :to="{ name: 'task', query: { qt : 'Cancelled Tasks', status: 4 } }" >Cancelled Tasks</router-link></li>
                         </ul>
                     </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'profile'}">
+                    <li><a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
                             <i class="fi-rr-user"></i>
                             <span class="nav-text">Profile</span>
-                        </router-link>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><router-link :to="{ name: 'profile'}">Profile</router-link></li>
+                            <li><router-link :to="{ name: 'profile.social_life'}">Social Life</router-link></li>
+                            <li><router-link :to="{ name: 'profile.contacts'}">Contacts</router-link></li>
+                            <li><router-link :to="{ name: 'profile.travels'}">Travels</router-link></li>
+                        </ul>
                     </li>
+
                     <li><router-link class="ai-icon" :to="{ name: 'referral'}">
                             <i class="fi-rr-receipt"></i>
                             <span class="nav-text">Referrals</span>
                         </router-link>
                     </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'profile'}">
+                    <li><router-link class="ai-icon" :to="{ name: 'reminders'}">
                             <i class="fi-rr-receipt"></i>
                             <span class="nav-text">Reminders</span>
                         </router-link>
@@ -51,6 +58,11 @@
                     <li><router-link class="ai-icon" :to="{ name: 'chat'}">
                             <i class="fi-rr-comment"></i>
                             <span class="nav-text">Chatbox Support</span>
+                        </router-link>
+                    </li>
+                    <li><router-link class="ai-icon" :to="{ name: 'faqs'}">
+                            <i class="fi-rr-comment"></i>
+                            <span class="nav-text">FAQs</span>
                         </router-link>
                     </li>
 
@@ -64,7 +76,7 @@
 
 <style>
     .ps {
-        height: 400px;
+        height: 350px;
     }
 
 </style>

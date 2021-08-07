@@ -113,6 +113,42 @@
             </div>
 
         </div>
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-header border-0 flex-wrap pb-0">
+                        <div class="mb-3">
+                            <h4 class="fs-20 text-black">Today's Reminders ({{ reminders.length }})</h4>
+                        </div>
+                    </div>
+                    <div class="card-body pb-0">
+                            <table id="referralTable" class="table display" style="min-width: 845px">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                    :class="rem.color ? `${rem.color} text-white` : ''"
+                                    v-for="(rem, index) in reminders" :key="index">
+                                        <td>{{rem.id}}</td>
+                                        <td>{{rem.title}}</td>
+                                        <td>{{rem.description}}</td>
+                                    </tr>
+                                    <tr v-if="!reminders.length">
+                                        <td colspan="6">No Reminders for today </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div v-if="user" class="row">
             <div class="col-lg-12">
                 <div class="card text-white bg-secondary">
@@ -158,16 +194,41 @@
                     <div class="card-header border-0 flex-wrap pb-0">
                         <div class="mb-3">
                             <h4 class="fs-20 text-black">Referral Analytics</h4>
-                            <p class="mb-0 fs-12 text-black">Lorem ipsum dolor sit amet, consectetur</p>
+                            <p class="mb-0 fs-12 text-black">No of referred clients onboard on the platforms</p>
                         </div>
-                        <select class="form-control style-1 default-select">
-                            <option>Weekly (2021)</option>
-                            <option>Daily (2021)</option>
-                            <option>Yearly (2021)</option>
-                        </select>
                     </div>
                     <div class="card-body pb-0">
-                        <div id="marketChart" class="market-line"></div>
+                            <table id="referralTable" class="table display" style="min-width: 845px">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Created at</th>
+                                        <th>Referral Code</th>
+                                        <th>Referred Client Name</th>
+                                        <th>Referred Client Email</th>
+                                        <th>Registration Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(ref, index) in data" :key="index">
+                                        <td>{{ref.id}}</td>
+                                        <td>{{ref.created_date}}</td>
+                                        <td>{{ref.referral_code}}</td>
+                                        <td>{{ref.referred_client_name}}</td>
+                                        <td>{{ref.referred_client_email}}</td>
+                                        <td>
+                                            <span :class="`badge light badge-${type_class[ref.registration_status]}`">
+                                                {{ ref.registration_status ? "Registered" : "Pending" }}
+                                            </span>
+
+                                        </td>
+                                    </tr>
+                                    <tr v-if="!referrels.length">
+                                        <td colspan="6">No Referrels found yet</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
                     </div>
                 </div>
             </div>
@@ -184,6 +245,7 @@
         },
         data() {
             return {
+                data: undefined,
                 baseUrl: window.base_url,
                 years: Array.from({
                     length: 10
@@ -191,6 +253,8 @@
                 filter: new Date().getFullYear(),
                 user: undefined,
                 task: undefined,
+                referrels: [],
+                reminders: [],
             }
         },
         mounted() {
@@ -200,8 +264,10 @@
             getData() {
                 axios.get(`/dashboard?year=${this.filter}`)
                     .then(({data}) => {
+                        this.reminders = data.reminders;
                         this.user = data.user;
                         this.task = data.task;
+                        this.referrels = data.referrels;
                     });
             }
         },

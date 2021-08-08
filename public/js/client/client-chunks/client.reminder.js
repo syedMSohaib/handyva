@@ -14165,7 +14165,15 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       console.log(data);
     },
     eventChange: function eventChange(data) {
-      console.log(data);
+      // console.log(data.event);
+      var obj = data.event;
+      axios.post("reminder/".concat(obj['id'], "/update"), {
+        start: "".concat(this.dateFormat(obj['start']), " ").concat(obj['start'].toUTCString().substr(17, 8)),
+        utc_start: "".concat(this.UTCdateFormat(obj['start']), " ").concat(obj['start'].toUTCString().substr(17, 8)),
+        end: obj['end'] ? "".concat(this.dateFormat(obj['end']), " ").concat(obj['end'].toUTCString().substr(17, 8)) : null,
+        utc_end: obj['end'] ? "".concat(this.UTCdateFormat(obj['end']), " ").concat(obj['end'].toUTCString().substr(17, 8)) : null,
+        append: 1
+      });
     },
     eventRemove: function eventRemove(data) {
       console.log(data);

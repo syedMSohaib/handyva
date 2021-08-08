@@ -199,7 +199,16 @@
                 console.log(data);
             },
             eventChange(data){
-                console.log(data);
+                // console.log(data.event);
+                let obj = data.event;
+                axios.post(`reminder/${obj['id']}/update`, {
+                    start: `${this.dateFormat(obj['start'])} ${obj['start'].toUTCString().substr(17,8)}`,
+                    utc_start: `${this.UTCdateFormat(obj['start'])} ${obj['start'].toUTCString().substr(17,8)}`,
+                    end: obj['end'] ? `${this.dateFormat(obj['end'])} ${obj['end'].toUTCString().substr(17,8)}` : null,
+                    utc_end: obj['end'] ? `${this.UTCdateFormat(obj['end'])} ${obj['end'].toUTCString().substr(17,8)}` : null,
+                    append: 1,
+                });
+
             },
             eventRemove(data){
                 console.log(data);

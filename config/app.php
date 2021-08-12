@@ -16,6 +16,41 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     'task_limit_per_day' => 5,
+
+    'permissions' => [
+        "Access to task statuses (pending, active, WIP, complete, cancel)",
+        "Access to mark task as an extensive or excess ",
+        "Access to internal note section ",
+        "Access to delete internal note written by mistake ",
+        "Access to see client names on tasks",
+        "Access to see client email address on tasks ",
+        "Access to see client profile & personal information",
+        "Access to see client social life credentials ",
+        "Access to see client Misc notes & files",
+        "Access to see client contacts ",
+        "Access to see clients travel preferences notes ",
+        "Access to see client tasks history ",
+        "Access to assign tasks ",
+        "Access to create users ",
+        "Access to remove users ",
+        "Access to see client list ",
+        "Access to see and set reminders",
+        "Access to chatbox ",
+        "Access to insights tab ",
+        "Access to create or remove a dummy client for company tasks use",
+        "Access to set coupons offer discounts ",
+        "Access to manage roles ",
+        "Access to website analytics ",
+        "Access to social media analytics ",
+        "Access to finance analytics",
+        "Access to clients analytics",
+        "Access to blog analytics ",
+        "Access to referrals ",
+        "Access to 06 small icons at the top of the page mentioned on the first page of document",
+        "Access to issue additional task credits to clients ",
+        "Access to view clients password or change it",
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AccessController;
 use App\Http\Controllers\Admin\BlogController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -13,6 +14,12 @@ Route::group(['middleware' => 'auth:admin_api'], function(){
 
     // Dashboard
     Route::apiResource('dashboard', DashboardController::class);
+
+    // AccessControls
+    Route::get('roles', [AccessController::class, 'roles']);
+    Route::post('roles', [AccessController::class, 'saveRoles']);
+    Route::get('permissions/{role_id}', [AccessController::class, 'getPermissions']);
+    Route::post('permissions/{role_id}', [AccessController::class, 'setPermissions']);
 
     // Task
     Route::apiResource('task', TaskController::class);

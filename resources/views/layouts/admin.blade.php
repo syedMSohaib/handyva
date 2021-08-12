@@ -35,6 +35,7 @@
         window.info = {
             countries : @json(app('App\Models\Country')::all()),
             timezones : @json(app('App\Models\Timezone')::all()),
+            permissions: @json(config('app.permissions')),
             task_status: @json(app('App\Models\Task')::$status),
         }
         window.soachat = {

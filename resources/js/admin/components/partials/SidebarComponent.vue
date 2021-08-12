@@ -33,10 +33,15 @@
                             <li><router-link :to="{ name: 'task', query: { status: 4 } }" >Cancelled Tasks</router-link></li>
                         </ul>
                     </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'employee'}">
+                    <li><a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
                             <i class="fi-rr-user"></i>
                             <span class="nav-text">Employees</span>
-                        </router-link>
+                        </a>
+                        <ul aria-expanded="false">
+                            <li><router-link :to="{ name: 'roles'}">Roles</router-link></li>
+                            <li><router-link :to="{ name: 'permissions'}">Permissions</router-link></li>
+                            <li><router-link :to="{ name: 'employee'}">Employees</router-link></li>
+                        </ul>
                     </li>
                     <li><router-link class="ai-icon" :to="{ name: 'client'}">
                             <i class="fi-rr-alarm-clock"></i>

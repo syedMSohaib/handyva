@@ -19,7 +19,11 @@ const TaskLogComponent          = () => import(/* webpackChunkName: "admin-task-
 const EmployeeComponent         = () => import(/* webpackChunkName: "admin-employee-index" */ './views/employee/IndexComponent');
 const EmployeeCreateComponent   = () => import(/* webpackChunkName: "admin-employee-create" */ './views/employee/CreateComponent');
 const EmployeeShowComponent     = () => import(/* webpackChunkName: "admin-employee-show" */ './views/employee/ShowComponent');
-const EmployeeEditComponent   = () => import(/* webpackChunkName: "admin-employee-edit" */ './views/employee/EditComponent');
+const EmployeeEditComponent     = () => import(/* webpackChunkName: "admin-employee-edit" */ './views/employee/EditComponent');
+const RoleComponent             = () => import(/* webpackChunkName: "admin-employee-edit" */ './views/employee/RoleComponent');
+const PermissionComponent       = () => import(/* webpackChunkName: "admin-employee-edit" */ './views/employee/PermissionComponent');
+
+
 
 // Client
 const ClientComponent           = () => import(/* webpackChunkName: "admin-client-index" */ './views/client/IndexComponent');
@@ -36,6 +40,8 @@ const ReferralComponent         = () => import(/* webpackChunkName: "admin-Refer
 
 // Chat
 const ChatComponent             = () => import(/* webpackChunkName: "admin.chat" */ './views/chat/ChatComponent');
+
+
 
 const router = new VueRouter({
     mode: 'history',
@@ -101,6 +107,24 @@ const router = new VueRouter({
             component: EmployeeComponent,
             meta: {
                 title: "All Employee",
+                description: ""
+            }
+        },
+        {
+            path: '/permissions',
+            name: 'permissions',
+            component: PermissionComponent,
+            meta: {
+                title: "All Permissions",
+                description: ""
+            }
+        },
+        {
+            path: '/roles',
+            name: 'roles',
+            component: RoleComponent,
+            meta: {
+                title: "All Roles",
                 description: ""
             }
         },

@@ -36,13 +36,22 @@
                                 <div class="col-sm-6 mb-2">
                                     <input type="password" v-model="employee.password" class="form-control" placeholder="Enter password" name="password">
                                 </div>
-                                <div class="col-sm-6 mb-2">
+                                <div class="col-sm-3 mb-2">
                                     <select class="form-control"  v-model="employee.gender" name="gender">
                                         <option value="">Select Gender</option>
                                         <option value="male">Male</option>
                                         <option value="female">Female</option>
                                     </select>
                                 </div>
+
+                                <div class="col-sm-3 mb-2">
+                                    <select v-model="employee.role"  class="form-control">
+                                        <option value="">Select Role</option>
+                                        <option v-for="(role, index) in roles" :key="index" :value="role.id"
+                                            v-text="role.name"></option>
+                                    </select>
+                                </div>
+
                                 <div class="col-sm-6 mb-2">
                                     <input type="text" v-model="employee.phone" class="form-control" placeholder="Enter phone" name="phone">
                                 </div>
@@ -104,7 +113,9 @@
                     phone: '',
                     address: '',
                     cnic: '',
+                    role: '',
                 },
+                roles: [],
                 image: '',
                 cv: '',
                 baseUrl : window.axios.defaults.baseURL,
@@ -115,8 +126,17 @@
 
         },
         mounted() {
+            this.getRoles();
         },
         methods: {
+            getRoles() {
+                axios.get(`/roles`)
+                    .then(({
+                        data
+                    }) => {
+                        this.roles = data;
+                    });
+            },
             handleFileChange(e){
                 this.image = e.target.files[0];
                 console.log(e.target.files[0]);

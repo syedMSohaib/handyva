@@ -26,6 +26,9 @@ Route::group(['middleware' => 'auth:admin_api'], function(){
     Route::post('task/{task}/files/upload', [TaskController::class, 'upload']);
     Route::post('task/{task}/update-status', [TaskController::class, 'updateStatus']);
     Route::post('task/{task}/assign-resource', [TaskController::class, 'assignResource']);
+    Route::get('task/{task}/extensive-task', [TaskController::class, 'makeextensiveTask']);
+    Route::post('task/{task}/add-note', [TaskController::class, 'addNote']);
+    Route::delete('task/{note}/delete-note', [TaskController::class, 'deleteNote']);
 
     // Listing
     Route::get('listing/task-pre-data', [ListingController::class, 'taskPreData'] );

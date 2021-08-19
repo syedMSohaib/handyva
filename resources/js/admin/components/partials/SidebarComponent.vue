@@ -23,14 +23,16 @@
                         </a>
                         <ul aria-expanded="false">
                             <li><router-link :to="{ name: 'task'}">All Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 1 } }" >Active Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 0 } }" >Pending Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { excess: 1 } }" >Excess Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 2 } }" >WIP Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { extensive: 1 } }" >Extensive Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { recurring: 1 } }" >Recurring Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 3 } }" >Completed Tasks</router-link></li>
-                            <li><router-link :to="{ name: 'task', query: { status: 4 } }" >Cancelled Tasks</router-link></li>
+                            <fragment v-can="0">
+                                <li><router-link :to="{ name: 'task', query: { status: 1 } }" >Active Tasks</router-link></li>
+                                <li><router-link :to="{ name: 'task', query: { status: 0 } }" >Pending Tasks</router-link></li>
+                                <li><router-link :to="{ name: 'task', query: { excess: 1 } }" >Excess Tasks</router-link></li>
+                                <li><router-link :to="{ name: 'task', query: { status: 2 } }" >WIP Tasks</router-link></li>
+                                <li><router-link :to="{ name: 'task', query: { extensive: 1 } }" >Extensive Tasks</router-link></li>
+                                <li><router-link :to="{ name: 'task', query: { recurring: 1 } }" >Recurring Tasks</router-link></li>
+                                <li><router-link :to="{ name: 'task', query: { status: 3 } }" >Completed Tasks</router-link></li>
+                                <li><router-link :to="{ name: 'task', query: { status: 4 } }" >Cancelled Tasks</router-link></li>
+                            </fragment>
                         </ul>
                     </li>
                     <li><a class="has-arrow ai-icon" href="javascript:void()" aria-expanded="false">
@@ -38,17 +40,19 @@
                             <span class="nav-text">Employees</span>
                         </a>
                         <ul aria-expanded="false">
-                            <li><router-link :to="{ name: 'roles'}">Roles</router-link></li>
-                            <li><router-link :to="{ name: 'permissions'}">Permissions</router-link></li>
+                            <li v-can="21" ><router-link :to="{ name: 'roles'}">Roles</router-link></li>
+                            <li v-can="21"><router-link :to="{ name: 'permissions'}">Permissions</router-link></li>
                             <li><router-link :to="{ name: 'employee'}">Employees</router-link></li>
                         </ul>
                     </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'client'}">
+                    <li
+                    v-can="6"
+                    ><router-link class="ai-icon" :to="{ name: 'client'}">
                             <i class="fi-rr-alarm-clock"></i>
                             <span class="nav-text">Clients</span>
                         </router-link>
                     </li>
-                    <li><router-link class="ai-icon" :to="{ name: 'referral'}">
+                    <li v-can="27"><router-link class="ai-icon" :to="{ name: 'referral'}">
                             <i class="fi-rr-receipt"></i>
                             <span class="nav-text">Referrals</span>
                         </router-link>
@@ -63,7 +67,7 @@
                             <span class="nav-text">Reminders</span>
                         </router-link>
                     </li> -->
-                    <li><router-link class="ai-icon" :to="{ name: 'chat'}">
+                    <li v-can="17" ><router-link class="ai-icon" :to="{ name: 'chat'}">
                             <i class="fi-rr-comment"></i>
                             <span class="nav-text">Chatbox Support</span>
                         </router-link>

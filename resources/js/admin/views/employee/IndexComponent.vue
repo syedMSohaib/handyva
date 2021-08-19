@@ -20,7 +20,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header">
+                    <div v-can="13" class="card-header">
                         <router-link class="mt-2" :to="{ name: 'employee.create'}"><h4 class="card-title">Create Employee</h4></router-link>
                     </div>
 
@@ -31,6 +31,7 @@
                                     <tr>
                                         <th>Emp ID</th>
                                         <th>Created at</th>
+                                        <th>Role</th>
                                         <th>Name</th>
                                         <th>Email</th>
                                         <th>Gender</th>
@@ -42,6 +43,7 @@
                                     <tr v-for="(employee, index) in data" :key="index">
                                         <td>{{employee.id}}</td>
                                         <td>{{employee.created_date}}</td>
+                                        <td>{{employee.role.name}}</td>
                                         <td>{{employee.name}}</td>
                                         <td>{{employee.email}}</td>
                                         <td>{{employee.gender}}</td>
@@ -50,7 +52,7 @@
                                             <div class="d-flex">
                                                 <router-link :to="{ name: 'employee.show', params: { id:  employee.id } }" title="View Task"
                                                     class="btn btn-primary shadow btn-xs sharp mr-1"><i class="fa fa-eye"></i></router-link>
-                                                <a href="javascript:;" @click.prevent="deleteEmployee(employee.id)" title="View Task" class="btn btn-danger shadow btn-xs sharp"><i class="fa fa-trash"></i></a>
+                                                <a v-can="14" href="javascript:;" @click.prevent="deleteEmployee(employee.id)" title="View Task" class="btn btn-danger shadow btn-xs sharp"><i class="fa fa-trash"></i></a>
                                             </div>
                                         </td>
 

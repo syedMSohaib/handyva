@@ -6,7 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Passport\HasApiTokens;
+use Laravel\Sanctum\HasApiTokens;
 use Webpatser\Uuid\Uuid;
 
 class Admin extends Authenticatable
@@ -21,6 +21,7 @@ class Admin extends Authenticatable
         });
     }
 
+
     /**
      * The attributes that are mass assignable.
      *
@@ -30,6 +31,13 @@ class Admin extends Authenticatable
         'name',
         'email',
         'password',
+        "phone",
+        "cnic",
+        "gender",
+        "address",
+        "image",
+        "role",
+        "cv",
     ];
 
     /**
@@ -51,9 +59,31 @@ class Admin extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['image'];
+    protected $appends = ['created_date'];
 
-    public function getImageAttribute(){
-        return "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name=Admin";
+    public function getCreatedDateAttribute(){
+        return $this->created_at->format(config('app.date_format'));
     }
+
+    public function role(){
+        return $this->belongsTo(Role::class, 'role');
+    }
+
+    public function pids(){
+        return $this->role()->first()->permissions()->whereStatus(1)->get()->pluck('permission_id');
+    }
+
+    public function getImageAttribute($value){
+        return $value
+            ? asset("storage/{$value}")
+            : "https://ui-avatars.com/api/?background=0D8ABC&color=fff&name={$this->name}";
+    }
+
+    public function getCvAttribute($value){
+        return $value
+            ? asset("storage/{$value}")
+            : "#";
+    }
+
+
 }

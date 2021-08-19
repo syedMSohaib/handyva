@@ -15,6 +15,13 @@ class AddFieldsToAdminsTable extends Migration
     {
         Schema::table('admins', function (Blueprint $table) {
             $table->integer('role')->default(1);
+            $table->string('phone')->nullable();
+            $table->string('cnic')->nullable();
+            $table->string('address')->nullable();
+            $table->string('gender')->nullable();
+            $table->longText('image')->nullable();
+            $table->longText('cv')->nullable();
+
         });
     }
 
@@ -27,6 +34,13 @@ class AddFieldsToAdminsTable extends Migration
     {
         Schema::table('admins', function (Blueprint $table) {
             $table->dropColumn('role');
+            $table->dropColumn('phone');
+            $table->dropColumn('cnic');
+            $table->dropColumn('address');
+            $table->dropColumn('gender');
+            $table->dropColumn('image');
+            $table->dropColumn('cv');
+
         });
     }
 }

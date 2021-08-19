@@ -7,7 +7,7 @@
         <div v-if="task" class="row justify-content-center">
             <div class="col-xl-3 col-sm-6 m-t35">
                 <div class="card card-coin">
-                    <div class="card-body text-center">
+                    <div @click="$router.push({ name: 'task'})" class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-gallery"></i>
                         </div>
@@ -20,9 +20,8 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
+                <div @click="$router.push({ name: 'task', query: { status: 1 } })"  class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-interactive"></i>
@@ -37,7 +36,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
+                <div @click="$router.push({ name: 'task', query: { status: 0 } })" class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-hourglass-end"></i>
@@ -53,7 +52,7 @@
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
                 <div class="card card-coin">
-                    <div class="card-body text-center">
+                    <div @click="$router.push({ name: 'task', query: { status: 2 } })"  class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-settings"></i>
                         </div>
@@ -68,7 +67,7 @@
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
                 <div class="card card-coin">
-                    <div class="card-body text-center">
+                    <div @click="$router.push({ name: 'task', query: { recurring: 1 } })"  class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-refresh"></i>
                         </div>
@@ -82,7 +81,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
+                <div @click="$router.push({ name: 'task', query: { status: 3 } })"  class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-time-check"></i>
@@ -97,7 +96,7 @@
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
+                <div @click="$router.push({ name: 'task', query: { status: 4 } })"  class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-cross-circle"></i>
@@ -111,6 +110,7 @@
                     </div>
                 </div>
             </div>
+
 
         </div>
         <div class="row">

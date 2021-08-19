@@ -7,6 +7,7 @@ use App\Http\Filters\TaskFilter;
 use App\Http\Requests\TaskRequest;
 use App\Models\Client;
 use App\Models\Task;
+use App\Models\TaskNote;
 use App\Models\User;
 
 use Illuminate\Http\Request;
@@ -141,5 +142,38 @@ class TaskController extends Controller
 
         return $this->responseSuccess("The task resource is assigned successfully", $task);
 
+    }
+
+
+    public function addNote(Request $request, Task $task){
+        $request->validate([
+            'task_id' => "required",
+            "note" => "required",
+        ]);
+
+        $data = $request->all();
+        $data['user_id'] = $request->user()->id;
+        $data['user_type'] = get_class($request->user());
+        $task->addNote($data);
+
+        activity()
+        ->causedBy($request->user())
+        ->performedOn($task)
+        ->log("{$request->user()->name} add internal note to task - {$task->title}");
+
+        return $this->responseSuccess("The internal note is added successfully");
+
+    }
+
+    public function deleteNote(TaskNote $note){
+        $note->delete();
+        return $this->responseSuccess("The internal note is deleted successfully");
+    }
+
+    public function makeextensiveTask(Request $request, Task $task){
+        $value = 1 - $task->is_extensive;
+        $task->is_extensive = $value;
+        $task->save();
+        return $this->responseSuccess("The task is updated successfully");
     }
 }

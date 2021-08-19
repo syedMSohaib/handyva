@@ -31,11 +31,11 @@
                                     <tr>
                                         <th>TaskID</th>
                                         <th>Created at</th>
-                                        <th>Client Name</th>
-                                        <th>Client Email</th>
+                                        <th v-can="4">Client Name</th>
+                                        <th v-can="4">Client Email</th>
                                         <th>Subject</th>
                                         <th>Task Type</th>
-                                        <th>Task Status</th>
+                                        <th v-can="0">Task Status</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -43,15 +43,15 @@
                                     <tr v-for="(task, index) in data" :key="index">
                                         <td>{{task.id}}</td>
                                         <td>{{task.created_date}}</td>
-                                        <td>{{task.client.name}}</td>
-                                        <td>{{task.client.email}}</td>
+                                        <td v-can="4">{{task.client.name}}</td>
+                                        <td v-can="5">{{task.client.email}}</td>
                                         <td>{{task.title}}</td>
                                         <td>
                                             <span :class="`badge light badge-${type_class[task.type]}`">
                                                 {{task.task_type_value}}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td v-can="0">
                                             <!-- <span :class="`badge light badge-${type_class[task.status]}`"> -->
                                                 {{task.status_value}}
                                             <!-- </span> -->

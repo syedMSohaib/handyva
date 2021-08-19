@@ -4,9 +4,24 @@
         <div class="form-head mb-sm-5 mb-3 d-flex flex-wrap align-items-center">
             <h2 class="font-w600 mb-2 mr-auto ">Dashboard</h2>
         </div>
-        <div class="row justify-content-center">
+        <div v-can="28" class="row justify-content-center">
             <div class="col-xl-3 col-sm-6 m-t35">
                 <div class="card card-coin">
+                    <div @click="$router.push({ name: 'task'})" class="card-body text-center">
+                        <div class="icon-wrp">
+                            <i class="fi-rr-gallery"></i>
+                        </div>
+                        <div class="flex-d-custom">
+                            <h2 class="text-black mb-2 font-w600 custom-big-stat">All Task</h2>
+                            <p class="mb-0 fs-14 custom-dash-text-stats">
+                                {{ task.all_task }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-6 m-t35">
+                <div @click="$router.push({ name: 'task', query: { status: 1 } })"  class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-interactive"></i>
@@ -14,14 +29,14 @@
                         <div class="flex-d-custom">
                             <h2 class="text-black mb-2 font-w600 custom-big-stat">Active Tasks</h2>
                             <p class="mb-0 fs-14 custom-dash-text-stats">
-                                05
+                                {{ task.active_tasks }}
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
+                <div @click="$router.push({ name: 'task', query: { status: 0 } })" class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-hourglass-end"></i>
@@ -29,7 +44,7 @@
                         <div class="flex-d-custom">
                             <h2 class="text-black mb-2 font-w600 custom-big-stat">Pending Tasks</h2>
                             <p class="mb-0 fs-14 custom-dash-text-stats">
-                                04
+                                {{ task.pending_tasks }}
                             </p>
                         </div>
                     </div>
@@ -37,14 +52,14 @@
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
                 <div class="card card-coin">
-                    <div class="card-body text-center">
+                    <div @click="$router.push({ name: 'task', query: { status: 2 } })"  class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-settings"></i>
                         </div>
                         <div class="flex-d-custom">
                             <h2 class="text-black mb-2 font-w600 custom-big-stat">Work In Progress</h2>
                             <p class="mb-0 fs-14 custom-dash-text-stats">
-                                03
+                                {{ task.work_in_progress }}
                             </p>
                         </div>
                     </div>
@@ -52,21 +67,21 @@
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
                 <div class="card card-coin">
-                    <div class="card-body text-center">
+                    <div @click="$router.push({ name: 'task', query: { recurring: 1 } })"  class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-refresh"></i>
                         </div>
                         <div class="flex-d-custom">
                             <h2 class="text-black mb-2 font-w600 custom-big-stat">Recurring</h2>
                             <p class="mb-0 fs-14 custom-dash-text-stats">
-                                04
+                                {{ task.recurring }}
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
+                <div @click="$router.push({ name: 'task', query: { status: 3 } })"  class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-time-check"></i>
@@ -74,14 +89,14 @@
                         <div class="flex-d-custom">
                             <h2 class="text-black mb-2 font-w600 custom-big-stat">Completed</h2>
                             <p class="mb-0 fs-14 custom-dash-text-stats">
-                                04
+                                {{ task.completed }}
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
+                <div @click="$router.push({ name: 'task', query: { status: 4 } })"  class="card card-coin">
                     <div class="card-body text-center">
                         <div class="icon-wrp">
                             <i class="fi-rr-cross-circle"></i>
@@ -89,22 +104,7 @@
                         <div class="flex-d-custom">
                             <h2 class="text-black mb-2 font-w600 custom-big-stat">Canceled</h2>
                             <p class="mb-0 fs-14 custom-dash-text-stats">
-                                04
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 m-t35">
-                <div class="card card-coin">
-                    <div class="card-body text-center">
-                        <div class="icon-wrp">
-                            <i class="fi-rr-gallery"></i>
-                        </div>
-                        <div class="flex-d-custom">
-                            <h2 class="text-black mb-2 font-w600 custom-big-stat">Extensive</h2>
-                            <p class="mb-0 fs-14 custom-dash-text-stats">
-                                04
+                                {{ task.cancelled }}
                             </p>
                         </div>
                     </div>
@@ -113,51 +113,15 @@
 
         </div>
         <div class="row">
-            <div class="col-lg-12">
-                <div class="card text-white bg-secondary">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h5 class="card-title text-white">Account Summary</h5>
-                        <div class="acc-sum-icon">
-                            <i class="fi-rr-user-add"></i>
-                        </div>
-                    </div>
-                    <div class="card-body mb-0">
-                        <div class="row">
-                            <div class="col-12 d-flex align-items-center justify-content-between flex-column flex-sm-row">
-                                <h4 class="text-white heading-badge">Full Name</h4>
-                                <p class="dash-acc-summ">Idrees Ahmed</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 d-flex align-items-center justify-content-between flex-column flex-sm-row">
-                                <h4 class="text-white heading-badge">Current Package</h4>
-                                <p class="dash-acc-summ">Basic 15 Tasks</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 d-flex align-items-center justify-content-between flex-column flex-sm-row">
-                                <h4 class="text-white heading-badge">Next Billing Date</h4>
-                                <p class="dash-acc-summ">10/10/2021</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 d-flex align-items-center justify-content-between flex-column flex-sm-row">
-                                <h4 class="text-white heading-badge">Remaining Tasks</h4>
-                                <p class="dash-acc-summ">10</p>
-                            </div>
-                        </div>
 
-                    </div>
-                </div>
-            </div>
         </div>
         <div class="row">
             <div class="col-xl-12">
                 <div class="card">
                     <div class="card-header border-0 flex-wrap pb-0">
                         <div class="mb-3">
-                            <h4 class="fs-20 text-black">Referral Analytics</h4>
-                            <p class="mb-0 fs-12 text-black">Lorem ipsum dolor sit amet, consectetur</p>
+                            <h4 class="fs-20 text-black">Analytics</h4>
+                            <p class="mb-0 fs-12 text-black">Will be added later</p>
                         </div>
                         <select class="form-control style-1 default-select">
                             <option>Weekly (2021)</option>
@@ -189,6 +153,11 @@
                 }, (value, index) => new Date().getFullYear() - index),
                 filter: new Date().getFullYear(),
                 employees: 0,
+                user: undefined,
+                task: {},
+                referrels: [],
+                reminders: [],
+
             }
         },
         mounted() {
@@ -197,7 +166,11 @@
         methods: {
             getData() {
                 axios.get(`/dashboard?year=${this.filter}`)
-                    .then(data => {
+                    .then(({data}) => {
+                        this.user = data.user;
+                        this.task = data.task;
+                        this.referrels = data.referrels;
+
                     });
             }
         },

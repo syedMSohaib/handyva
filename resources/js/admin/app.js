@@ -51,6 +51,17 @@ Vue.mixin({
     }
 });
 
+Vue.directive('can', {
+    bind: function (el, binding, vnode) {
+      if (! window.user_per
+          .includes(binding.expression
+            .replace(/'/g, "")
+              .replace(/"/g, ""))) {
+         vnode.elm.style.display = "none";
+      }
+    }
+});
+
 Vue.prototype.$baseUrl = window.base_url;
 Vue.prototype.$placeApiKey = "AIzaSyAHPUufTlBkF5NfBT3uhS9K4BbW2N-mkb4";
 Vue.prototype.$user = window.user;

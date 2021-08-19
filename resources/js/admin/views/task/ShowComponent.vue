@@ -23,8 +23,8 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-6 text-md-left text-center">
-                                <h4 class="client_name">{{task.client.name}}</h4>
-                                <h6 class="client_email">{{task.client.email}}</h6>
+                                <h4 v-can="4" class="client_name">{{task.client.name}}</h4>
+                                <h6 v-can="5" class="client_email">{{task.client.email}}</h6>
                             </div>
                             <div class="col-md-6 text-md-right text-center mt-3 mt-md-0">
                                 <p class="date-time-task">
@@ -78,20 +78,22 @@
 
                                 </div>
                             </div>
-                            <div v-if="false" class="col-lg-12 mt-lg-0 mt-3">
+                            <div v-can="2" class="col-lg-12 mt-lg-0 mt-3">
                                 <h5 class="tx-bold">Internal Notes</h5>
-                                <div class="notes-wrap">
-                                    <div class="note row">
+                                <div class="notes-wrap" >
+                                    <div v-for="(note, nid) in task.notes" :key="nid" class="note row">
                                         <div class="col-md-11 col-sm-11 col-xs-11">
-                                            <p class="post-response">sdvsd <i class="fa  fa-check"></i></p>
-                                            <small class="posted-by">By <span>sajjad ali</span>
-                                                on 25 Jul, 2021 | 07:07 PM
+                                            <p class="post-response">
+                                                {{ note.note }}
+                                            </p>
+                                            <small class="posted-by">By <span>{{ note.user.name }}</span>
+                                                on {{ note.created_date}}
                                             </small>
 
                                         </div>
-                                        <div class="col-md-1 col-sm-1 col-xs-1">
-                                            <p class="delete">
-                                                <a href="javascript:void(0)">
+                                        <div v-can="3" class="col-md-1 col-sm-1 col-xs-1">
+                                            <p v-if="note.isauthor"  class="delete">
+                                                <a @click="deleteNote(note.id)" href="javascript:void(0)">
                                                     <i class="fa fa-times"></i>
                                                 </a>
                                             </p>
@@ -99,21 +101,21 @@
                                     </div>
                                 </div>
 
-                                <!-- <div class="row notes-div" style="display: none;">
+                            <div class="row notes-div">
                                     <div class="col-12 post-a-note">
-                                        <textarea name="" id="note-text" cols="30" class="form-control" rows="4"
+                                        <textarea v-model="note" id="note-text" cols="30" class="form-control" rows="4"
                                             maxlength="1200"></textarea>
-                                        <button class="btn btn-handy-task mt-2"
-                                            onclick="addInternalNotes('6')">Post</button>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-12 text-right mt-3">
-                                        <button class="btn btn-handy-task" onclick="ShowAndHideNoteDiv()">ADD
-                                            NOTE</button>
+                                        <button class="btn btn-handy-task" @click="addNote()">ADD
+                                            NOTE
+                                        </button>
                                     </div>
-                                </div> -->
+                                </div>
                             </div>
+
                         </div>
                         <div class="row mt-4">
                             <div class="col-lg-4 col-md-6">
@@ -137,7 +139,7 @@
                             </div>
 
 
-                            <div class="col-lg-4 col-md-6">
+                            <div v-can="12" class="col-lg-4 col-md-6">
                                 <label for="" class="task-d-label">Assign</label>
                                 <select class="form-control" v-model="task.user_id" name="resource_id" id="resource_id">
                                     <option value="">::Resource::</option>
@@ -195,7 +197,13 @@
                         <div class="row my-2">
                             <div class="col-12 text-center">
                                 <!-- <button class="btn btn-handy-task mr-md-2 mb-md-0 mb-2 d-md-inline-block d-table mx-auto" onclick="addExcess('6')">Excess Task</button> -->
-                                <button class="btn btn-handy-task mr-md-2 mr-0">Extensive Task</button>
+                                <button
+                                v-can="1"
+                                @click="makeTaskExtensive"
+                                v-text="Number(task.is_extensive) ? 'Make Task Non Extensive' : 'Make Task Extensive'"
+                                :class="Number(task.is_extensive) ? 'bg-warning' : 'bg-danger'"
+                                class="btn btn-handy-task mr-md-2 mr-0"></button>
+
                                 <router-link :to="{ name: 'task.logs', params: { id: task.id } }"
                                     class="btn btn-handy-task mr-md-2 mr-0">View Activity Logs</router-link>
 
@@ -223,6 +231,7 @@
                 hours: [...Array(24).keys()],
                 minutes: [...Array(60).keys()],
                 clients: [],
+                note: '',
                 baseUrl: window.axios.defaults.baseURL,
             }
         },
@@ -232,6 +241,48 @@
             this.getUser();
         },
         methods: {
+            makeTaskExtensive(){
+                axios.get(`/task/${this.$route.params.id}/extensive-task`)
+                .then( ( {data} ) => {
+                    this.$toastr.success(data.message, 'Success', {});
+                    this.getTask();
+                }).catch(e => {
+                    console.log(e);
+                    let errors = e.response.data.errors;
+                    Object.keys(errors).forEach(key => {
+                        this.$toastr.error(errors[key], "Error!");
+                    });
+                });
+            },
+            deleteNote(id){
+                this.$dialog.confirm(`Are you sure you want to this internal note ? The Action is irreversible`).then(
+                    dialog => {
+                        axios.delete(`/task/${id}/delete-note`).then(d => {
+                            this.getTask();
+                            this.$toastr.success(d.data.message, 'Success', {});
+                            dialog.close();
+                        }).catch(d => {});
+                    })
+            },
+            addNote() {
+                axios.post(`/task/${this.$route.params.id}/add-note`, {
+                    user_id: this.task.user_id,
+                    note: this.note,
+                    task_id: this.$route.params.id,
+                }).then(({
+                    data
+                }) => {
+                    this.note = "";
+                    this.getTask();
+                }).catch(e => {
+                    console.log(e);
+                    let errors = e.response.data.errors;
+                    Object.keys(errors).forEach(key => {
+                        this.$toastr.error(errors[key], "Error!");
+                    });
+                });
+
+            },
             changeStatus(id) {
                 axios.post(`/task/${this.$route.params.id}/update-status`, {
                     status: this.task.status,

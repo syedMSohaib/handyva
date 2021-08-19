@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\WelcomeEmail;
+use App\Models\Admin;
 use App\Models\Client;
 use App\Models\User;
 use Exception;
@@ -19,7 +20,7 @@ class UserController extends Controller
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index(){
-        return User::latest()->get();
+        return Admin::with('role')->latest()->get();
     }
 
     /**
@@ -42,7 +43,7 @@ class UserController extends Controller
             "image" => ['required'],
         ]);
 
-        $user = new User();
+        $user = new Admin();
 
         $password = $request->password;
         $data = $request->only($user->getFillable());
@@ -76,7 +77,7 @@ class UserController extends Controller
      * @param  User $user
      * @return UserResource
      */
-    public function show(User $user)
+    public function show(Admin $user)
     {
         return $user;
     }
@@ -98,7 +99,7 @@ class UserController extends Controller
             "cnic" => ['required'],
         ]);
 
-        $user = User::find($id);
+        $user = Admin::find($id);
         $data = $request->only($user->getFillable());
         if($data)
             $data['password'] = bcrypt($request->password);
@@ -128,7 +129,7 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        $user = User::find($id);
+        $user = Admin::find($id);
         $user->status = !$user->status;
         $user->save();
         return response(['message' => 'User has been ' . ($user->status? 'activated': "blocked")]);

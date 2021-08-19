@@ -10,7 +10,7 @@ class Role extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name'
+        'id', 'name'
     ];
 
     protected $appends = ["created_date"];
@@ -22,4 +22,6 @@ class Role extends Model
     public function permissions(){
         return $this->hasMany(Permission::class, 'role_id');
     }
+
+
 }

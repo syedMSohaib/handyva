@@ -105,6 +105,7 @@
                     }) => {
                         this.$toastr.success(data.message, 'Success');
                         this.getRoles();
+                        window.location.reload();
                     }).catch(e => {
                         let errors = e.response.data.errors;
                         Object.keys(errors).forEach(key => {

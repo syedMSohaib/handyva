@@ -666,212 +666,307 @@ var render = function() {
       ? _c("div", { staticClass: "row justify-content-center" }, [
           _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
             _c("div", { staticClass: "card card-coin" }, [
-              _c("div", { staticClass: "card-body text-center" }, [
-                _vm._m(1),
-                _vm._v(" "),
-                _c("div", { staticClass: "flex-d-custom" }, [
-                  _c(
-                    "h2",
-                    {
-                      staticClass: "text-black mb-2 font-w600 custom-big-stat"
-                    },
-                    [_vm._v("All Task")]
-                  ),
+              _c(
+                "div",
+                {
+                  staticClass: "card-body text-center",
+                  on: {
+                    click: function($event) {
+                      return _vm.$router.push({ name: "task" })
+                    }
+                  }
+                },
+                [
+                  _vm._m(1),
                   _vm._v(" "),
-                  _c(
-                    "p",
-                    { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
-                    [
-                      _vm._v(
-                        "\n                            " +
-                          _vm._s(_vm.task.all_task) +
-                          "\n                        "
-                      )
-                    ]
-                  )
+                  _c("div", { staticClass: "flex-d-custom" }, [
+                    _c(
+                      "h2",
+                      {
+                        staticClass: "text-black mb-2 font-w600 custom-big-stat"
+                      },
+                      [_vm._v("All Task")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm.task.all_task) +
+                            "\n                        "
+                        )
+                      ]
+                    )
+                  ])
+                ]
+              )
+            ])
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
+            _c(
+              "div",
+              {
+                staticClass: "card card-coin",
+                on: {
+                  click: function($event) {
+                    return _vm.$router.push({
+                      name: "task",
+                      query: { status: 1 }
+                    })
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "card-body text-center" }, [
+                  _vm._m(2),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "flex-d-custom" }, [
+                    _c(
+                      "h2",
+                      {
+                        staticClass: "text-black mb-2 font-w600 custom-big-stat"
+                      },
+                      [_vm._v("Active Tasks")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm.task.active_tasks) +
+                            "\n                        "
+                        )
+                      ]
+                    )
+                  ])
                 ])
-              ])
+              ]
+            )
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
+            _c(
+              "div",
+              {
+                staticClass: "card card-coin",
+                on: {
+                  click: function($event) {
+                    return _vm.$router.push({
+                      name: "task",
+                      query: { status: 0 }
+                    })
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "card-body text-center" }, [
+                  _vm._m(3),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "flex-d-custom" }, [
+                    _c(
+                      "h2",
+                      {
+                        staticClass: "text-black mb-2 font-w600 custom-big-stat"
+                      },
+                      [_vm._v("Pending Tasks")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm.task.pending_tasks) +
+                            "\n                        "
+                        )
+                      ]
+                    )
+                  ])
+                ])
+              ]
+            )
+          ]),
+          _vm._v(" "),
+          _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
+            _c("div", { staticClass: "card card-coin" }, [
+              _c(
+                "div",
+                {
+                  staticClass: "card-body text-center",
+                  on: {
+                    click: function($event) {
+                      return _vm.$router.push({
+                        name: "task",
+                        query: { status: 2 }
+                      })
+                    }
+                  }
+                },
+                [
+                  _vm._m(4),
+                  _vm._v(" "),
+                  _c("div", { staticClass: "flex-d-custom" }, [
+                    _c(
+                      "h2",
+                      {
+                        staticClass: "text-black mb-2 font-w600 custom-big-stat"
+                      },
+                      [_vm._v("Work In Progress")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm.task.work_in_progress) +
+                            "\n                        "
+                        )
+                      ]
+                    )
+                  ])
+                ]
+              )
             ])
           ]),
           _vm._v(" "),
           _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
             _c("div", { staticClass: "card card-coin" }, [
-              _c("div", { staticClass: "card-body text-center" }, [
-                _vm._m(2),
-                _vm._v(" "),
-                _c("div", { staticClass: "flex-d-custom" }, [
-                  _c(
-                    "h2",
-                    {
-                      staticClass: "text-black mb-2 font-w600 custom-big-stat"
-                    },
-                    [_vm._v("Active Tasks")]
-                  ),
+              _c(
+                "div",
+                {
+                  staticClass: "card-body text-center",
+                  on: {
+                    click: function($event) {
+                      return _vm.$router.push({
+                        name: "task",
+                        query: { recurring: 1 }
+                      })
+                    }
+                  }
+                },
+                [
+                  _vm._m(5),
                   _vm._v(" "),
-                  _c(
-                    "p",
-                    { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
-                    [
-                      _vm._v(
-                        "\n                            " +
-                          _vm._s(_vm.task.active_tasks) +
-                          "\n                        "
-                      )
-                    ]
-                  )
-                ])
-              ])
+                  _c("div", { staticClass: "flex-d-custom" }, [
+                    _c(
+                      "h2",
+                      {
+                        staticClass: "text-black mb-2 font-w600 custom-big-stat"
+                      },
+                      [_vm._v("Recurring")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm.task.recurring) +
+                            "\n                        "
+                        )
+                      ]
+                    )
+                  ])
+                ]
+              )
             ])
           ]),
           _vm._v(" "),
           _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
-            _c("div", { staticClass: "card card-coin" }, [
-              _c("div", { staticClass: "card-body text-center" }, [
-                _vm._m(3),
-                _vm._v(" "),
-                _c("div", { staticClass: "flex-d-custom" }, [
-                  _c(
-                    "h2",
-                    {
-                      staticClass: "text-black mb-2 font-w600 custom-big-stat"
-                    },
-                    [_vm._v("Pending Tasks")]
-                  ),
+            _c(
+              "div",
+              {
+                staticClass: "card card-coin",
+                on: {
+                  click: function($event) {
+                    return _vm.$router.push({
+                      name: "task",
+                      query: { status: 3 }
+                    })
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "card-body text-center" }, [
+                  _vm._m(6),
                   _vm._v(" "),
-                  _c(
-                    "p",
-                    { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
-                    [
-                      _vm._v(
-                        "\n                            " +
-                          _vm._s(_vm.task.pending_tasks) +
-                          "\n                        "
-                      )
-                    ]
-                  )
+                  _c("div", { staticClass: "flex-d-custom" }, [
+                    _c(
+                      "h2",
+                      {
+                        staticClass: "text-black mb-2 font-w600 custom-big-stat"
+                      },
+                      [_vm._v("Completed")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm.task.completed) +
+                            "\n                        "
+                        )
+                      ]
+                    )
+                  ])
                 ])
-              ])
-            ])
+              ]
+            )
           ]),
           _vm._v(" "),
           _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
-            _c("div", { staticClass: "card card-coin" }, [
-              _c("div", { staticClass: "card-body text-center" }, [
-                _vm._m(4),
-                _vm._v(" "),
-                _c("div", { staticClass: "flex-d-custom" }, [
-                  _c(
-                    "h2",
-                    {
-                      staticClass: "text-black mb-2 font-w600 custom-big-stat"
-                    },
-                    [_vm._v("Work In Progress")]
-                  ),
+            _c(
+              "div",
+              {
+                staticClass: "card card-coin",
+                on: {
+                  click: function($event) {
+                    return _vm.$router.push({
+                      name: "task",
+                      query: { status: 4 }
+                    })
+                  }
+                }
+              },
+              [
+                _c("div", { staticClass: "card-body text-center" }, [
+                  _vm._m(7),
                   _vm._v(" "),
-                  _c(
-                    "p",
-                    { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
-                    [
-                      _vm._v(
-                        "\n                            " +
-                          _vm._s(_vm.task.work_in_progress) +
-                          "\n                        "
-                      )
-                    ]
-                  )
+                  _c("div", { staticClass: "flex-d-custom" }, [
+                    _c(
+                      "h2",
+                      {
+                        staticClass: "text-black mb-2 font-w600 custom-big-stat"
+                      },
+                      [_vm._v("Canceled")]
+                    ),
+                    _vm._v(" "),
+                    _c(
+                      "p",
+                      { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
+                      [
+                        _vm._v(
+                          "\n                            " +
+                            _vm._s(_vm.task.cancelled) +
+                            "\n                        "
+                        )
+                      ]
+                    )
+                  ])
                 ])
-              ])
-            ])
-          ]),
-          _vm._v(" "),
-          _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
-            _c("div", { staticClass: "card card-coin" }, [
-              _c("div", { staticClass: "card-body text-center" }, [
-                _vm._m(5),
-                _vm._v(" "),
-                _c("div", { staticClass: "flex-d-custom" }, [
-                  _c(
-                    "h2",
-                    {
-                      staticClass: "text-black mb-2 font-w600 custom-big-stat"
-                    },
-                    [_vm._v("Recurring")]
-                  ),
-                  _vm._v(" "),
-                  _c(
-                    "p",
-                    { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
-                    [
-                      _vm._v(
-                        "\n                            " +
-                          _vm._s(_vm.task.recurring) +
-                          "\n                        "
-                      )
-                    ]
-                  )
-                ])
-              ])
-            ])
-          ]),
-          _vm._v(" "),
-          _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
-            _c("div", { staticClass: "card card-coin" }, [
-              _c("div", { staticClass: "card-body text-center" }, [
-                _vm._m(6),
-                _vm._v(" "),
-                _c("div", { staticClass: "flex-d-custom" }, [
-                  _c(
-                    "h2",
-                    {
-                      staticClass: "text-black mb-2 font-w600 custom-big-stat"
-                    },
-                    [_vm._v("Completed")]
-                  ),
-                  _vm._v(" "),
-                  _c(
-                    "p",
-                    { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
-                    [
-                      _vm._v(
-                        "\n                            " +
-                          _vm._s(_vm.task.completed) +
-                          "\n                        "
-                      )
-                    ]
-                  )
-                ])
-              ])
-            ])
-          ]),
-          _vm._v(" "),
-          _c("div", { staticClass: "col-xl-3 col-sm-6 m-t35" }, [
-            _c("div", { staticClass: "card card-coin" }, [
-              _c("div", { staticClass: "card-body text-center" }, [
-                _vm._m(7),
-                _vm._v(" "),
-                _c("div", { staticClass: "flex-d-custom" }, [
-                  _c(
-                    "h2",
-                    {
-                      staticClass: "text-black mb-2 font-w600 custom-big-stat"
-                    },
-                    [_vm._v("Canceled")]
-                  ),
-                  _vm._v(" "),
-                  _c(
-                    "p",
-                    { staticClass: "mb-0 fs-14 custom-dash-text-stats" },
-                    [
-                      _vm._v(
-                        "\n                            " +
-                          _vm._s(_vm.task.cancelled) +
-                          "\n                        "
-                      )
-                    ]
-                  )
-                ])
-              ])
-            ])
+              ]
+            )
           ])
         ])
       : _vm._e(),

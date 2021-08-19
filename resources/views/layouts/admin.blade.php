@@ -30,7 +30,8 @@
     <!-- Scripts -->
     <script type="text/javascript">
         window.base_url = "{{ url('/') }}";
-        window.user = @json(auth()->guard('admin')->user());
+        window.user = @json(auth('admin')->user());
+        window.user_per = @json(auth('admin')->user()->pids());
         window.appname = "{{config('app.name')}}";
         window.info = {
             countries : @json(app('App\Models\Country')::all()),
